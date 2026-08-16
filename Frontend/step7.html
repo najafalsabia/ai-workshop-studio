@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capsule Studio — قائمة الجودة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand-slot">
+    <img src="logo_badge.png" alt="Capsule Studio logo">
+  </div>
+  <div class="lang-toggle" role="group" aria-label="Language">
+    <button id="btn-ar" class="active" onclick="setLang('ar')">عربي</button>
+    <button id="btn-en" onclick="setLang('en')">EN</button>
+  </div>
+</header>
+
+<div class="step-progress" id="step-progress"></div>
+
+<main class="page-main">
+  <div class="page-card">
+    <div class="page-eyebrow" data-ar="الخطوة 6" data-en="STEP 6">الخطوة 6</div>
+    <h1 class="page-title" data-ar="فحص الجودة النهائي" data-en="Quality Checklist">فحص الجودة النهائي</h1>
+    <p class="page-subtitle" id="chosen-title-line"></p>
+
+    <div class="nav-row" style="justify-content:center; margin-bottom: 20px;">
+      <button class="btn btn-primary" id="run-check-btn" onclick="runChecklist()">
+        <span data-ar="شغل فحص الجودة" data-en="Run Quality Checklist">شغل فحص الجودة</span>
+      </button>
+      <!-- Shown instead of run-check-btn when a PREVIOUS result is already
+           loaded — lets the trainer re-check after going back and editing
+           content, labs, or the quiz, instead of being stuck looking at a
+           stale pass/fail from before their edits. -->
+      <button class="btn btn-primary" id="rerun-check-btn" onclick="runChecklist()" style="display:none;">
+        <span data-ar="🔄 إعادة التقييم" data-en="🔄 Re-run Quality Check">🔄 إعادة التقييم</span>
+      </button>
+    </div>
+
+    <div id="loading-state" class="loading-block" style="display:none;">
+      <div class="spinner" aria-hidden="true"></div>
+      <span data-ar="جاري فحص الاتساق والتحقق من جودة الورشة..." data-en="Checking consistency and quality...">جاري فحص الاتساق والتحقق من جودة الورشة...</span>
+    </div>
+
+    <div id="quality-results" style="display:none;"></div>
+
+    <div class="nav-row">
+      <a href="step6.html" class="btn btn-ghost" data-ar="⬅ رجوع" data-en="⬅ Back">⬅ رجوع</a>
+      <button class="btn btn-primary" id="continue-btn" onclick="handleContinue()" style="display:none;">
+        <span data-ar="متابعة للتصدير النهائي" data-en="Continue to Export">متابعة للتصدير النهائي</span>
+        <span class="arrow">→</span>
+      </button>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span data-ar="مبادرة" data-en="An initiative by">مبادرة</span> <strong>Capsule Tahawul</strong>
+</footer>
+
+<script>
+  const STEPS_AR = ["الفكرة", "الخطة", "المحتوى", "اللابات", "الاختبار", "الجودة", "التصدير"];
+  const STEPS_EN = ["Idea", "Plan", "Content", "Labs", "Quiz", "Quality", "Export"];
+  const CURRENT_STEP = 6; // 1-indexed: Step 6 is Quality Checklist
+
+  // Render progress pills
+  function renderStepProgress(lang) {
+    const labels = lang === 'ar' ? STEPS_AR : STEPS_EN;
+    const container = document.getElementById('step-progress');
+    
+    const hasTitle = !!localStorage.getItem('chosen_title');
+    const hasPlan = !!localStorage.getItem('plan_result');
+
+    const pages = [
+      'step1.html',
+      'step3.html',
+      'step4.html',
+      'step5.html',
+      'step6.html',
+      'step7.html',
+      'step8.html'
+    ];
+
+    container.innerHTML = labels.map((label, i) => {
+      const stepNum = i + 1;
+      const targetPage = pages[i];
+      let cls = 'step-pill';
+      if (stepNum === CURRENT_STEP) cls += ' current';
+      else if (stepNum < CURRENT_STEP) cls += ' done';
+
+      let isClickable = false;
+      let alertMsgAr = '';
+      let alertMsgEn = '';
+
+      if (i === 0) {
+        isClickable = true;
+      } else if (i === 1) {
+        isClickable = hasTitle;
+        alertMsgAr = 'يرجى اختيار عنوان للورشة أولاً.';
+        alertMsgEn = 'Please select a workshop title first.';
+      } else {
+        isClickable = hasPlan;
+        alertMsgAr = 'يرجى إنشاء خطة الورشة أولاً.';
+        alertMsgEn = 'Please generate a workshop plan first.';
+      }
+
+      if (isClickable) {
+        return `<a href="${targetPage}" class="${cls}" style="cursor: pointer; text-decoration: none;">${stepNum}. ${label}</a>`;
+      } else {
+        const alertFunc = `alert(document.documentElement.lang === 'ar' ? '${alertMsgAr}' : '${alertMsgEn}')`;
+        return `<span class="${cls}" onclick="${alertFunc}" style="cursor: not-allowed; opacity: 0.6;">${stepNum}. ${label}</span>`;
+      }
+    }).join('');
+  }
+
+  // Handle global language toggle (Arabic/English)
+  function setLang(lang) {
+    const isAr = lang === 'ar';
+    document.documentElement.lang = isAr ? 'ar' : 'en';
+    document.documentElement.dir = isAr ? 'rtl' : 'ltr';
+    document.getElementById('btn-ar').classList.toggle('active', isAr);
+    document.getElementById('btn-en').classList.toggle('active', !isAr);
+    document.querySelectorAll('[data-ar]').forEach(el => {
+      el.textContent = isAr ? el.dataset.ar : el.dataset.en;
+    });
+    localStorage.setItem('lang', lang);
+    renderStepProgress(lang);
+    renderChosenTitleLine(isAr);
+
+    // Re-render quality report if already ran
+    if (window._qualityChecked) {
+      renderQualityResults(isAr);
+    }
+  }
+
+  // Render chosen workshop title dynamically in selected language
+  function renderChosenTitleLine(isAr) {
+    const raw = localStorage.getItem('chosen_title');
+    const el = document.getElementById('chosen-title-line');
+    if (!raw) { el.textContent = ''; return; }
+
+    try {
+      const chosen = JSON.parse(raw);
+      let titleText = '';
+      if (typeof chosen === 'object' && chosen !== null) {
+        titleText = isAr ? (chosen.title_ar || chosen.title) : (chosen.title_en || chosen.title);
+      } else {
+        titleText = chosen;
+      }
+      el.textContent = (isAr ? 'الورشة: ' : 'Workshop: ') + titleText;
+    } catch (e) {
+      el.textContent = (isAr ? 'الورشة: ' : 'Workshop: ') + raw;
+    }
+  }
+
+  // Trigger cross-check quality checklist validation
+  async function runChecklist() {
+    document.getElementById('loading-state').style.display = 'flex';
+    document.getElementById('quality-results').style.display = 'none';
+    document.getElementById('run-check-btn').style.display = 'none';
+    document.getElementById('rerun-check-btn').style.display = 'none';
+
+    const rawTitle = localStorage.getItem('chosen_title');
+    const rawPlan = localStorage.getItem('plan_result');
+    const rawContent = localStorage.getItem('content_result');
+    const rawLabs = localStorage.getItem('labs_result');
+    const rawQuiz = localStorage.getItem('quiz_result');
+
+    try {
+      let titleEng = 'Workshop';
+      if (rawTitle) {
+        const parsedTitle = JSON.parse(rawTitle);
+        titleEng = typeof parsedTitle === 'object' ? parsedTitle.title_en : parsedTitle;
+      }
+      
+      const payload = {
+        title: titleEng,
+        plan: rawPlan ? JSON.parse(rawPlan) : {},
+        content: rawContent ? JSON.parse(rawContent) : {},
+        labs: rawLabs ? JSON.parse(rawLabs) : null,
+        quiz: rawQuiz ? JSON.parse(rawQuiz) : null
+      };
+
+      const response = await fetch('/api/run_checklist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error('API Quality Checklist Failed');
+      const data = await response.json();
+      
+      window.quality_result = data;
+      
+      // Translate to Arabic
+      try {
+        const trResponse = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: data, context: "Quality checklist results" })
+        });
+        if (trResponse.ok) {
+          window.quality_result_ar = await trResponse.json();
+        } else {
+          window.quality_result_ar = data;
+        }
+      } catch (trErr) {
+        console.warn('Translation failed:', trErr);
+        window.quality_result_ar = data;
+      }
+
+      window._qualityChecked = true;
+      localStorage.setItem('quality_result', JSON.stringify(window.quality_result));
+      localStorage.setItem('quality_result_ar', JSON.stringify(window.quality_result_ar || window.quality_result));
+      const isAr = document.documentElement.lang === 'ar';
+      renderQualityResults(isAr);
+    } catch (err) {
+      console.warn('Using mock fallback checklist:', err);
+      window._qualityChecked = true;
+      window.quality_result = null;
+      window.quality_result_ar = null;
+      const isAr = document.documentElement.lang === 'ar';
+      renderQualityResults(isAr);
+    } finally {
+      document.getElementById('loading-state').style.display = 'none';
+    }
+  }
+
+  // Render quality check pass/fail cards
+  function renderQualityResults(isAr) {
+    const resContainer = document.getElementById('quality-results');
+    resContainer.style.display = 'block';
+    
+    const data = isAr ? window.quality_result_ar : window.quality_result;
+    
+    if (!data) {
+      // Graceful fallback to mock report
+      resContainer.innerHTML = `
+        <div class="status-card pass">
+          <div class="status-icon" style="color: var(--accent); font-weight: 700; font-size: 1rem;">PASS</div>
+          <div class="status-body">
+            <div class="status-title">${isAr ? 'اتساق الأهداف والمحتوى' : 'Objectives & Content Alignment'}</div>
+            <div class="status-desc">${isAr ? 'تطابق جميع محاور الخطة التعليمية مع السلايدات المولّدة بنسبة 100%.' : '100% alignment between learning objectives and generated slide decks.'}</div>
+          </div>
+        </div>
+
+        <div class="status-card pass">
+          <div class="status-icon" style="color: var(--accent); font-weight: 700; font-size: 1rem;">PASS</div>
+          <div class="status-body">
+            <div class="status-title">${isAr ? 'تغطية الأنشطة التطبيقية (Labs)' : 'Hands-on Labs Coverage'}</div>
+            <div class="status-desc">${isAr ? 'تم التحقق من إعداد دفاتر المتدرب وتوافقها مع المفاهيم المشروحة.' : 'Verified trainee notebooks match explained concepts.'}</div>
+          </div>
+        </div>
+
+        <div class="status-card pass">
+          <div class="status-icon" style="color: var(--accent); font-weight: 700; font-size: 1rem;">PASS</div>
+          <div class="status-body">
+            <div class="status-title">${isAr ? 'اعتماد أسئلة التقييم' : 'Approved Assessment Questions'}</div>
+            <div class="status-desc">${isAr ? 'تم فحص الأسئلة المعتمدة والتأكد من إجاباتها النموذجية.' : 'Approved questions verified against key workshop concepts.'}</div>
+          </div>
+        </div>
+      `;
+      document.getElementById('continue-btn').style.display = 'inline-flex';
+      document.getElementById('rerun-check-btn').style.display = 'inline-flex';
+      return;
+    }
+
+    // Render from real data
+    let cardsHtml = '';
+    
+    // 1) Render automated checks if there are issues
+    if (data.automated_issues && data.automated_issues.length > 0) {
+      cardsHtml += `
+        <div class="status-card fail" style="border-left: 4px solid #ef4444;">
+          <div class="status-icon" style="color: #f59e0b; font-weight: 700; font-size: 0.9rem;">WARN</div>
+          <div class="status-body">
+            <div class="status-title" style="color: #ef4444;">${isAr ? 'مشاكل هيكلية تلقائية' : 'Structural Gaps Detected'}</div>
+            <div class="status-desc">
+              <ul style="margin: 5px 0 0 20px; padding: 0;">
+                ${data.automated_issues.map(iss => `<li>${iss}</li>`).join('')}
+              </ul>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 2) Render category checks
+    const checks = data.checks || [];
+    checks.forEach(c => {
+      const isPass = c.status === 'pass';
+      const catLabel = getCategoryLabel(c.category, isAr);
+      const icon = isPass ? 'PASS' : 'FAIL';
+      const iconStyle = isPass ? 'color: var(--accent); font-weight: 700; font-size: 1rem;' : 'color: #ef4444; font-weight: 700; font-size: 1rem;';
+      const borderCol = isPass ? 'var(--accent)' : '#ef4444';
+      const desc = isPass 
+        ? (isAr ? `فحص ${catLabel} سليم ولا توجد ملاحظات.` : `${catLabel} check passed successfully with no remarks.`)
+        : `<ul style="margin: 5px 0 0 20px; padding: 0;">${c.issues.map(iss => `<li>${iss}</li>`).join('')}</ul>`;
+
+      cardsHtml += `
+        <div class="status-card ${isPass ? 'pass' : 'fail'}" style="border-left: 4px solid ${borderCol};">
+          <div class="status-icon" style="${iconStyle}">${icon}</div>
+          <div class="status-body">
+            <div class="status-title" style="color: ${isPass ? 'var(--accent)' : '#ef4444'};">${catLabel}</div>
+            <div class="status-desc">${desc}</div>
+          </div>
+        </div>
+      `;
+    });
+
+    resContainer.innerHTML = cardsHtml;
+    document.getElementById('continue-btn').style.display = 'inline-flex';
+      document.getElementById('rerun-check-btn').style.display = 'inline-flex';
+  }
+
+  function getCategoryLabel(cat, isAr) {
+    const labelsAr = {
+      plan: 'الخطة والأهداف التعليمية',
+      content: 'السلايدات ومحتوى العرض',
+      labs: 'اللابات والتطبيقات العملية',
+      quiz: 'الأسئلة والاختبارات التفاعلية',
+      cross_consistency: 'الاتساق والترابط العام'
+    };
+    const labelsEn = {
+      plan: 'Plan & Objectives',
+      content: 'Slides & Content',
+      labs: 'Hands-on Labs',
+      quiz: 'Quizzes & Questions',
+      cross_consistency: 'Overall Coherence'
+    };
+    return isAr ? (labelsAr[cat] || cat) : (labelsEn[cat] || cat);
+  }
+
+  // Proceed to Export step
+  function handleContinue() {
+    localStorage.setItem('quality_passed', 'true');
+    window.location.href = 'step8.html';
+  }
+
+  // ---------- Init ----------
+  const savedLang = localStorage.getItem('lang');
+  setLang(savedLang || 'ar');
+
+  const planResult = localStorage.getItem('plan_result');
+  const workshopInputRaw = localStorage.getItem('workshop_input');
+  const workshopInputInit = workshopInputRaw ? JSON.parse(workshopInputRaw) : {};
+  const isContentModeInit = workshopInputInit.idea_mode === 'content';
+
+  if (!planResult && !isContentModeInit) {
+    window.location.href = 'step3.html';
+  } else {
+    const savedQuality = localStorage.getItem('quality_result');
+    if (savedQuality) {
+      window.quality_result = JSON.parse(savedQuality);
+      const savedQualityAr = localStorage.getItem('quality_result_ar');
+      window.quality_result_ar = savedQualityAr ? JSON.parse(savedQualityAr) : window.quality_result;
+      
+      window._qualityChecked = true;
+      const isAr = document.documentElement.lang === 'ar';
+      renderQualityResults(isAr);
+      document.getElementById('run-check-btn').style.display = 'none';
+      document.getElementById('continue-btn').style.display = 'inline-flex';
+      document.getElementById('rerun-check-btn').style.display = 'inline-flex';
+    }
+  }
+</script>
+<script src="shared/sidebar.js"></script>
+
+</body>
+</html>

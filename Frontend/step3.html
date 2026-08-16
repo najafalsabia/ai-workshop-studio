@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capsule Studio — خطة الورشة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600" rel="stylesheet">
+<link rel="stylesheet" href="shared/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand-slot">
+    <img src="logo_badge.png" alt="Capsule Studio logo">
+  </div>
+  <div class="lang-toggle" role="group" aria-label="Language">
+    <button id="btn-ar" class="active" onclick="setLang('ar')">عربي</button>
+    <button id="btn-en" onclick="setLang('en')">EN</button>
+  </div>
+</header>
+
+<div class="step-progress" id="step-progress"></div>
+
+<main class="page-main">
+  <div class="page-card">
+    <div class="page-eyebrow" data-ar="الخطوة 2" data-en="STEP 2">الخطوة 2</div>
+    <h1 class="page-title" data-ar="خطة الورشة" data-en="Workshop plan">خطة الورشة</h1>
+    <p class="page-subtitle" id="chosen-title-line"></p>
+
+    <div id="setup-block">
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label" data-ar="نمط الدورات (شرح ← لاب ← بريك)" data-en="Explain → Lab → Break cycle">نمط الدورات (شرح ← لاب ← بريك)</div>
+          <div class="toggle-desc" data-ar="مناسب للورش العملية. اتركه مطفأ لخطة حرة التنظيم." data-en="Good for hands-on workshops. Leave off for a freely structured plan.">مناسب للورش العملية. اتركه مطفأ لخطة حرة التنظيم.</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="use-cycle" onchange="toggleCycleFields()">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div id="cycle-fields" class="cycle-fields" style="display:none;">
+        <div class="field">
+          <label data-ar="دقائق الشرح" data-en="Explain (min)">دقائق الشرح</label>
+          <input type="text" id="explain-min" value="30">
+        </div>
+        <div class="field">
+          <label data-ar="دقائق اللاب" data-en="Lab (min)">دقائق اللاب</label>
+          <input type="text" id="lab-min" value="20">
+        </div>
+        <div class="field">
+          <label data-ar="دقائق البريك" data-en="Break (min)">دقائق البريك</label>
+          <input type="text" id="break-min" value="15">
+        </div>
+      </div>
+
+      <div class="nav-row" style="justify-content:center; margin-top:4px;">
+        <button class="btn btn-primary" id="generate-plan-btn" onclick="generatePlan(false)">
+          <span data-ar="ولّد الخطة" data-en="Generate plan">ولّد الخطة</span>
+          <span class="arrow">→</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="loading-state" class="loading-block" style="display:none;">
+      <div class="spinner" aria-hidden="true"></div>
+      <span data-ar="جاري بناء الخطة..." data-en="Building the plan...">جاري بناء الخطة...</span>
+    </div>
+
+    <div id="plan-result" style="display:none;">
+      <div class="section-label" data-ar="الأهداف التعليمية" data-en="Learning objectives">الأهداف التعليمية</div>
+      <ul class="objectives-list" id="objectives-list"></ul>
+
+      <div class="section-label" data-ar="مخطط الورشة" data-en="Outline">مخطط الورشة</div>
+      <div id="outline-list"></div>
+
+      <div class="nav-row" style="justify-content:center; margin-top:20px; margin-bottom: 8px;">
+        <button class="btn btn-ghost" onclick="generatePlan(true)">
+          <span data-ar="↻ أعد التوليد" data-en="↻ Regenerate">↻ أعد التوليد</span>
+        </button>
+      </div>
+
+      <!-- AI Refinement block -->
+      <div id="refine-block" style="margin-top: 24px; border-top: 1.5px solid var(--teal-soft); padding-top: 20px;">
+        <div class="field">
+          <label data-ar="تعديل خطة الورشة بالذكاء الاصطناعي" data-en="Refine Plan with AI">تعديل خطة الورشة بالذكاء الاصطناعي</label>
+          <input type="text" id="refine-feedback" placeholder="مثال: أضف قسمًا جديدًا عن الأمان، أو اجعل مدة الاستراحة أطول..." data-ph-ar="مثال: أضف قسمًا جديدًا عن الأمان، أو اجعل مدة الاستراحة أطول..." data-ph-en="E.g., Add a section on security, or make the break longer...">
+        </div>
+        <div class="nav-row" style="justify-content: flex-end; margin-top: 8px; margin-bottom: 12px;">
+          <button class="btn btn-ghost" id="refine-btn" onclick="refinePlan()" style="padding: 10px 20px; font-size: 0.9rem;">
+            <span data-ar="تطبيق التعديل" data-en="Apply Feedback">تطبيق التعديل</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <a href="step2.html" class="btn btn-ghost" data-ar="⬅ رجوع" data-en="⬅ Back">⬅ رجوع</a>
+      <button class="btn btn-primary" id="continue-btn" onclick="handleContinue()" style="display:none;">
+        <span data-ar="متابعة للمحتوى" data-en="Continue to content">متابعة للمحتوى</span>
+        <span class="arrow">→</span>
+      </button>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span data-ar="مبادرة" data-en="An initiative by">مبادرة</span> <strong>Capsule Tahawul</strong>
+</footer>
+
+<script>
+  const STEPS_AR = ["الفكرة", "الخطة", "المحتوى", "اللابات", "الاختبار", "الجودة", "التصدير"];
+  const STEPS_EN = ["Idea", "Plan", "Content", "Labs", "Quiz", "Quality", "Export"];
+  const CURRENT_STEP = 2; // 1-indexed: Step 2 is Plan Builder
+
+  function renderStepProgress(lang) {
+    const labels = lang === 'ar' ? STEPS_AR : STEPS_EN;
+    const container = document.getElementById('step-progress');
+    
+    const hasTitle = !!localStorage.getItem('chosen_title');
+    const hasPlan = !!localStorage.getItem('plan_result');
+
+    const pages = [
+      'step1.html',
+      'step3.html',
+      'step4.html',
+      'step5.html',
+      'step6.html',
+      'step7.html',
+      'step8.html'
+    ];
+
+    container.innerHTML = labels.map((label, i) => {
+      const stepNum = i + 1;
+      const targetPage = pages[i];
+      let cls = 'step-pill';
+      if (stepNum === CURRENT_STEP) cls += ' current';
+      else if (stepNum < CURRENT_STEP) cls += ' done';
+
+      let isClickable = false;
+      let alertMsgAr = '';
+      let alertMsgEn = '';
+
+      if (i === 0) {
+        isClickable = true;
+      } else if (i === 1) {
+        isClickable = hasTitle;
+        alertMsgAr = 'يرجى اختيار عنوان للورشة أولاً.';
+        alertMsgEn = 'Please select a workshop title first.';
+      } else {
+        isClickable = hasPlan;
+        alertMsgAr = 'يرجى إنشاء خطة الورشة أولاً.';
+        alertMsgEn = 'Please generate a workshop plan first.';
+      }
+
+      if (isClickable) {
+        return `<a href="${targetPage}" class="${cls}" style="cursor: pointer; text-decoration: none;">${stepNum}. ${label}</a>`;
+      } else {
+        const alertFunc = `alert(document.documentElement.lang === 'ar' ? '${alertMsgAr}' : '${alertMsgEn}')`;
+        return `<span class="${cls}" onclick="${alertFunc}" style="cursor: not-allowed; opacity: 0.6;">${stepNum}. ${label}</span>`;
+      }
+    }).join('');
+  }
+
+  function setLang(lang) {
+    const isAr = lang === 'ar';
+    document.documentElement.lang = isAr ? 'ar' : 'en';
+    document.documentElement.dir = isAr ? 'rtl' : 'ltr';
+    document.getElementById('btn-ar').classList.toggle('active', isAr);
+    document.getElementById('btn-en').classList.toggle('active', !isAr);
+    document.querySelectorAll('[data-ar]').forEach(el => {
+      el.textContent = isAr ? el.dataset.ar : el.dataset.en;
+    });
+    document.querySelectorAll('[data-ph-ar]').forEach(el => {
+      el.placeholder = isAr ? el.dataset.phAr : el.dataset.phEn;
+    });
+    localStorage.setItem('lang', lang);
+    renderStepProgress(lang);
+    renderChosenTitleLine(isAr);
+
+    if (window._planLoaded) {
+      const plan = isAr ? (window.plan_result_ar || MOCK_PLAN_AR) : (window.plan_result || MOCK_PLAN_EN);
+      renderPlan(plan);
+    }
+  }
+
+  // Render title line dynamically based on selected language
+  function renderChosenTitleLine(isAr) {
+    const raw = localStorage.getItem('chosen_title');
+    const el = document.getElementById('chosen-title-line');
+    if (!raw) { el.textContent = ''; return; }
+
+    try {
+      const chosen = JSON.parse(raw);
+      let titleText = '';
+      if (typeof chosen === 'object' && chosen !== null) {
+        titleText = isAr ? (chosen.title_ar || chosen.title) : (chosen.title_en || chosen.title);
+      } else {
+        titleText = chosen;
+      }
+      el.textContent = (isAr ? 'الورشة: ' : 'Workshop: ') + titleText;
+    } catch (e) {
+      el.textContent = (isAr ? 'الورشة: ' : 'Workshop: ') + raw;
+    }
+  }
+
+  function toggleCycleFields() {
+    const on = document.getElementById('use-cycle').checked;
+    document.getElementById('cycle-fields').style.display = on ? 'grid' : 'none';
+  }
+
+  // ---------- Plan generation mock data ----------
+  const MOCK_PLAN_AR = {
+    learning_objectives: [
+      "تمييز الفرق بين الأتمتة البسيطة والوكلاء الحقيقيين القادرين على اتخاذ قرارات.",
+      "تصميم أوامر (prompts) فعالة توجّه الوكيل لاستخدام أدوات خارجية بدقة.",
+      "بناء نظام وكلاء متعدد بسيط مع بروتوكول تنسيق واضح بين الوكلاء.",
+      "تطبيق معايير احترافية (معالجة الأخطاء، الاختبار) لتحويل نموذج أولي إلى نظام جاهز."
+    ],
+    outline: [
+      { section: "الترحيب وأهداف الورشة", duration_minutes: 10, description: "نظرة عامة على تحول الذكاء الاصطناعي من التوليد النصي إلى تنفيذ المهام المستقل.", role: "opening" },
+      { section: "من الدردشة إلى الوكلاء المستقلين", duration_minutes: 30, description: "شرح المكونات الأساسية للوكيل ونمط الملاحظة-التفكير-الفعل.", role: "explain" },
+      { section: "بناء أول مساعد متصل بأدوات", duration_minutes: 20, description: "تمرين عملي لربط نموذج لغوي بأدوات برمجية بسيطة.", role: "lab" },
+      { section: "استراحة", duration_minutes: 15, description: "استراحة قصيرة.", role: "break" },
+      { section: "هندسة سير العمل الذكي", duration_minutes: 30, description: "تسلسل المهام وإدارة الحالة عبر خطوات متعددة.", role: "explain" },
+      { section: "أتمتة مهمة متسلسلة", duration_minutes: 20, description: "جلسة برمجية لربط ثلاث أدوات ضمن مسار تلقائي واحد.", role: "lab" },
+      { section: "التلخيص والأسئلة", duration_minutes: 15, description: "نقاش مفتوح وموارد إضافية.", role: "qna" }
+    ]
+  };
+
+  const MOCK_PLAN_EN = {
+    learning_objectives: [
+      "Distinguish simple automation from true agents capable of independent decisions.",
+      "Design effective prompts that guide an agent to use external tools precisely.",
+      "Build a simple multi-agent system with a clear coordination protocol.",
+      "Apply production-grade practices (error handling, testing) to move from prototype to a real system."
+    ],
+    outline: [
+      { section: "Welcome & Workshop Goals", duration_minutes: 10, description: "Overview of the shift from text generation to autonomous task execution.", role: "opening" },
+      { section: "From Chat to Autonomous Agents", duration_minutes: 30, description: "Core agent components and the observe-think-act pattern.", role: "explain" },
+      { section: "Build Your First Tool-Enabled Assistant", duration_minutes: 20, description: "Hands-on exercise connecting an LLM to simple tools.", role: "lab" },
+      { section: "Break", duration_minutes: 15, description: "Short break.", role: "break" },
+      { section: "Architecting Intelligent Workflows", duration_minutes: 30, description: "Task sequencing and state management across multiple steps.", role: "explain" },
+      { section: "Automate a Sequential Task", duration_minutes: 20, description: "Coding session chaining three tools into one automated pipeline.", role: "lab" },
+      { section: "Wrap-up & Q&A", duration_minutes: 15, description: "Open discussion and further resources.", role: "qna" }
+    ]
+  };
+
+  const ROLE_LABELS_AR = { opening: "افتتاح", explain: "شرح", lab: "لاب", break: "بريك", qna: "أسئلة", competition: "مسابقة", closing: "ختام" };
+  const ROLE_LABELS_EN = { opening: "OPENING", explain: "EXPLAIN", lab: "LAB", break: "BREAK", qna: "Q&A", competition: "GAME", closing: "CLOSING" };
+
+  async function generatePlan(isRegenerate) {
+    document.getElementById('plan-result').style.display = 'none';
+    document.getElementById('continue-btn').style.display = 'none';
+    document.getElementById('loading-state').style.display = 'flex';
+
+    const inputDataStr = localStorage.getItem('workshop_input');
+    const rawTitle = localStorage.getItem('chosen_title');
+    if (!inputDataStr || !rawTitle) {
+      window.location.href = 'step1.html';
+      return;
+    }
+
+    try {
+      const parsedTitle = JSON.parse(rawTitle);
+      const titleEng = typeof parsedTitle === 'object' ? parsedTitle.title_en : parsedTitle;
+      const inputData = JSON.parse(inputDataStr);
+      
+      const payload = {
+        title: titleEng,
+        audience: inputData.audience,
+        age: inputData.age,
+        duration: inputData.duration,
+        goal: inputData.goal,
+        notes: inputData.notes,
+        uploaded_content: inputData.uploaded_content || "",
+        use_cycle: document.getElementById('use-cycle').checked,
+        explain_min: document.getElementById('explain-min').value,
+        lab_min: document.getElementById('lab-min').value,
+        break_min: document.getElementById('break-min').value
+      };
+
+      const response = await fetch('/api/build_plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        // Show the REAL backend error instead of throwing it away — this
+        // used to always say the same generic "API Plan Generation
+        // Failed" no matter what actually went wrong on the server,
+        // which made every real failure impossible to diagnose without
+        // digging through DevTools' Network tab.
+        let detail = `HTTP ${response.status}`;
+        try {
+          const errBody = await response.json();
+          detail = errBody.detail || detail;
+        } catch (_) { /* response wasn't JSON — keep the HTTP status as the detail */ }
+        alert('Plan generation failed:\n\n' + detail + '\n\n(Falling back to a placeholder plan — fix the issue above and try again.)');
+        throw new Error(detail);
+      }
+      const data = await response.json();
+      
+      window.plan_result = data;
+      
+      // Translate to Arabic
+      try {
+        const trResponse = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: data, context: "Workshop plan outline" })
+        });
+        if (trResponse.ok) {
+          window.plan_result_ar = await trResponse.json();
+        } else {
+          window.plan_result_ar = data;
+        }
+      } catch (trErr) {
+        console.warn('Translation failed:', trErr);
+        window.plan_result_ar = data;
+      }
+      
+      const isAr = document.documentElement.lang === 'ar';
+      renderPlan(isAr ? window.plan_result_ar : window.plan_result);
+      window._planLoaded = true;
+    } catch (err) {
+      console.warn('Using mock fallback plan:', err);
+      window.plan_result = MOCK_PLAN_EN;
+      window.plan_result_ar = MOCK_PLAN_AR;
+      const isAr = document.documentElement.lang === 'ar';
+      renderPlan(isAr ? MOCK_PLAN_AR : MOCK_PLAN_EN);
+      window._planLoaded = true;
+    } finally {
+      document.getElementById('loading-state').style.display = 'none';
+    }
+  }
+
+  function renderPlan(plan) {
+    const isAr = document.documentElement.lang === 'ar';
+    const roleLabels = isAr ? ROLE_LABELS_AR : ROLE_LABELS_EN;
+
+    document.getElementById('objectives-list').innerHTML =
+      plan.learning_objectives.map(o => `<li>${o}</li>`).join('');
+
+    document.getElementById('outline-list').innerHTML = plan.outline.map(s => `
+      <div class="outline-item">
+        <div class="outline-duration">${s.duration_minutes} ${isAr ? 'د' : 'min'}</div>
+        <div class="outline-body">
+          <div class="outline-section">${s.section}<span class="outline-role-badge role-${s.role}">${roleLabels[s.role] || s.role}</span></div>
+          <div class="outline-desc">${s.description}</div>
+        </div>
+      </div>
+    `).join('');
+
+    window._currentPlan = plan;
+    document.getElementById('plan-result').style.display = 'block';
+    document.getElementById('continue-btn').style.display = 'inline-flex';
+  }
+
+  function handleContinue() {
+    if (!window._currentPlan) return;
+    localStorage.setItem('plan_result', JSON.stringify(window.plan_result));
+    localStorage.setItem('plan_result_ar', JSON.stringify(window.plan_result_ar || window.plan_result));
+    window.location.href = 'step4.html';
+  }
+
+  async function refinePlan() {
+    const feedback = document.getElementById('refine-feedback').value.trim();
+    if (!feedback) return;
+    
+    const isAr = document.documentElement.lang === 'ar';
+    const refineBtn = document.getElementById('refine-btn');
+    const oldText = refineBtn.innerHTML;
+    
+    refineBtn.disabled = true;
+    refineBtn.innerHTML = isAr ? '⏳ جاري التعديل...' : '⏳ Refining...';
+    
+    try {
+      const payload = {
+        category: "plan",
+        current_data: window.plan_result || MOCK_PLAN_EN,
+        feedback: feedback
+      };
+      
+      const response = await fetch('/api/refine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) throw new Error('Refining Failed');
+      const data = await response.json();
+      
+      window.plan_result = data;
+      
+      try {
+        const trResponse = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: data, context: "Workshop plan outline" })
+        });
+        if (trResponse.ok) {
+          window.plan_result_ar = await trResponse.json();
+        } else {
+          window.plan_result_ar = data;
+        }
+      } catch (trErr) {
+        console.warn('Translation failed:', trErr);
+        window.plan_result_ar = data;
+      }
+      
+      localStorage.setItem('plan_result', JSON.stringify(window.plan_result));
+      localStorage.setItem('plan_result_ar', JSON.stringify(window.plan_result_ar));
+      
+      renderPlan(isAr ? window.plan_result_ar : window.plan_result);
+      document.getElementById('refine-feedback').value = '';
+    } catch (err) {
+      console.error(err);
+      alert(isAr ? 'فشل تعديل الخطة بالذكاء الاصطناعي.' : 'Failed to refine plan with AI.');
+    } finally {
+      refineBtn.disabled = false;
+      refineBtn.innerHTML = oldText;
+    }
+  }
+
+  // ---------- Init ----------
+  const savedLang = localStorage.getItem('lang');
+  setLang(savedLang || 'ar');
+
+  const chosenTitle = localStorage.getItem('chosen_title');
+  if (!chosenTitle) {
+    window.location.href = 'step2.html';
+  } else {
+    const savedPlan = localStorage.getItem('plan_result');
+    if (savedPlan) {
+      window.plan_result = JSON.parse(savedPlan);
+      const savedPlanAr = localStorage.getItem('plan_result_ar');
+      window.plan_result_ar = savedPlanAr ? JSON.parse(savedPlanAr) : window.plan_result;
+      
+      const isAr = document.documentElement.lang === 'ar';
+      renderPlan(isAr ? window.plan_result_ar : window.plan_result);
+      window._planLoaded = true;
+      document.getElementById('setup-block').style.display = 'none';
+    }
+  }
+</script>
+<script src="shared/sidebar.js"></script>
+
+</body>
+</html>

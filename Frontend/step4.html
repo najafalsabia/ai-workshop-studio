@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capsule Studio — محتوى الورشة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600" rel="stylesheet">
+<link rel="stylesheet" href="shared/styles.css">
+<style>
+  /* Slideshow Modal Styles */
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(31, 45, 61, 0.85);
+    backdrop-filter: blur(8px);
+  }
+  .modal-container {
+    position: relative;
+    z-index: 1010;
+    background: var(--bg-warm);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 900px;
+    padding: 35px 40px 40px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid var(--teal-soft);
+    animation: modalFadeIn 0.3s ease-out;
+  }
+  @keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .modal-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    font-size: 2.5rem;
+    cursor: pointer;
+    color: var(--gray-text);
+    line-height: 1;
+    transition: color 0.2s;
+  }
+  .modal-close:hover {
+    color: var(--navy-cta);
+  }
+  .slideshow-card {
+    background: var(--white);
+    border: 1px solid var(--teal-soft);
+    border-radius: 16px;
+    padding: 30px;
+    width: 100%;
+    min-height: 380px;
+    box-shadow: 0 10px 30px rgba(74, 130, 145, 0.08);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .slideshow-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: 20px 0;
+  }
+  .slideshow-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 24px;
+    width: 100%;
+  }
+  .slideshow-counter {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--teal-deep);
+  }
+  
+  html[dir="rtl"] .modal-close {
+    right: auto;
+    left: 20px;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand-slot">
+    <img src="logo_badge.png" alt="Capsule Studio logo">
+  </div>
+  <div class="lang-toggle" role="group" aria-label="Language">
+    <button id="btn-ar" class="active" onclick="setLang('ar')">عربي</button>
+    <button id="btn-en" onclick="setLang('en')">EN</button>
+  </div>
+</header>
+
+<div class="step-progress" id="step-progress"></div>
+
+<main class="page-main">
+  <div class="page-card">
+    <div class="page-eyebrow" data-ar="الخطوة 3" data-en="STEP 3">الخطوة 3</div>
+    <h1 class="page-title" data-ar="محتوى الورشة" data-en="Workshop content">محتوى الورشة</h1>
+    <p class="page-subtitle" id="chosen-title-line"></p>
+
+    <div id="setup-block">
+      <div style="max-width:360px; margin: 0 auto 16px;">
+        <label for="style-select" style="display:block; font-weight:600; margin-bottom:6px;"
+               data-ar="تصميم السلايدات" data-en="Slide design">تصميم السلايدات</label>
+        <select id="style-select" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
+          <option value="Bold & Impactful" selected data-ar="جريء ومؤثر (الوحيد الغامق — كحلي داكن)" data-en="Bold & Impactful (the only dark one — navy)">جريء ومؤثر (الوحيد الغامق — كحلي داكن)</option>
+          <option value="Clean & Minimal" data-ar="نظيف وبسيط (أبيض نقي)" data-en="Clean & Minimal (pure white)">نظيف وبسيط (أبيض نقي)</option>
+          <option value="Visual & Diagram-heavy" data-ar="بصري وكثير الرسوم (أبيض مائل للأزرق الفاتح جداً)" data-en="Visual & Diagram-heavy (near-white, faint blue tint)">بصري وكثير الرسوم (أبيض مائل للأزرق الفاتح جداً)</option>
+          <option value="Data & Research" data-ar="بحثي وتحليلي (أبيض + إطار رمادي رفيع + خط Georgia)" data-en="Data & Research (white + thin gray border + Georgia font)">بحثي وتحليلي (أبيض + إطار رمادي رفيع + خط Georgia)</option>
+          <option value="Interactive & Workshop" data-ar="تفاعلي وورشة عمل (أبيض دافي كريمي + لمسات برتقالية)" data-en="Interactive & Workshop (warm cream white + orange accents)">تفاعلي وورشة عمل (أبيض دافي كريمي + لمسات برتقالية)</option>
+        </select>
+      </div>
+      <div class="nav-row" style="justify-content:center; margin-top:4px;">
+        <button class="btn btn-primary" id="generate-btn" onclick="generateContent(false)">
+          <span data-ar="ولّد المحتوى" data-en="Generate content">ولّد المحتوى</span>
+          <span class="arrow">→</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="loading-state" class="loading-block" style="display:none;">
+      <div class="spinner" aria-hidden="true"></div>
+      <span data-ar="جاري البحث وكتابة السلايدات..." data-en="Researching and writing slides...">جاري البحث وكتابة السلايدات...</span>
+    </div>
+
+    <div id="content-result" style="display:none;"></div>
+
+    <!-- AI Refinement block -->
+    <div id="refine-block" style="display:none; margin-top: 24px; border-top: 1.5px solid var(--teal-soft); padding-top: 20px;">
+      <div class="field">
+        <label data-ar="تعديل محتوى الشرائح بالذكاء الاصطناعي" data-en="Refine Content with AI">تعديل محتوى الشرائح بالذكاء الاصطناعي</label>
+        <input type="text" id="refine-feedback" placeholder="مثال: أضف المزيد من أمثلة الأكواد، أو استخدم مصطلحات أبسط..." data-ph-ar="مثال: أضف المزيد من أمثلة الأكواد، أو استخدم مصطلحات أبسط..." data-ph-en="E.g., Add more code examples, or use simpler terms...">
+      </div>
+      <div class="nav-row" style="justify-content: flex-end; margin-top: 8px; margin-bottom: 12px;">
+        <button class="btn btn-ghost" id="refine-btn" onclick="refineContent()" style="padding: 10px 20px; font-size: 0.9rem;">
+          <span data-ar="تطبيق التعديل" data-en="Apply Feedback">تطبيق التعديل</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Presentation Options (Preview & Download) -->
+    <div id="presentation-actions" class="nav-row" style="display:none; justify-content:center; gap:12px; margin-top:20px; margin-bottom:12px; flex-wrap:wrap;">
+      <button class="btn btn-ghost" id="preview-slideshow-btn" onclick="openSlideshow()" style="border:1.5px solid var(--teal-deep); color:var(--teal-deep); font-weight:700;">
+        <span data-ar="عرض الشرائح" data-en="Preview Slideshow">عرض الشرائح</span>
+      </button>
+      <button class="btn btn-primary" id="download-pptx-btn" onclick="downloadPPTX()" style="background:var(--teal-deep); color:var(--white); font-weight:700;">
+        <span data-ar="تحميل PPTX" data-en="Download PPTX">تحميل PPTX</span>
+      </button>
+    </div>
+
+    <div id="regen-row" class="nav-row" style="display:none; justify-content:center; margin-top:8px; margin-bottom: 8px;">
+      <button class="btn btn-ghost" onclick="generateContent(true)">
+        <span data-ar="↻ أعد التوليد" data-en="↻ Regenerate">↻ أعد التوليد</span>
+      </button>
+    </div>
+
+    <div class="nav-row">
+      <a href="step3.html" class="btn btn-ghost" data-ar="⬅ رجوع" data-en="⬅ Back">⬅ رجوع</a>
+      <button class="btn btn-primary" id="continue-btn" onclick="handleContinue()" style="display:none;">
+        <span data-ar="متابعة للابات" data-en="Continue to labs">متابعة للابات</span>
+        <span class="arrow">→</span>
+      </button>
+    </div>
+  </div>
+</main>
+
+<!-- Slideshow Modal -->
+<div id="slideshow-modal" class="modal" style="display:none;">
+  <div class="modal-overlay" onclick="closeSlideshow()"></div>
+  <div class="modal-container">
+    <button class="modal-close" onclick="closeSlideshow()" aria-label="Close slideshow">&times;</button>
+    <div class="slideshow-card">
+      <div id="modal-slide-header" class="slide-card-header" style="border-bottom: 1.5px solid var(--teal-soft); padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <span id="modal-slide-title" class="slide-title-text" style="font-size: 1.3rem; font-weight: 700; color: var(--navy-cta);"></span>
+        <span id="modal-slide-type" class="slide-type-badge" style="background: var(--teal-soft); color: var(--teal-deep); padding: 4px 10px; border-radius: 999px; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700;"></span>
+      </div>
+      <div id="modal-slide-body" class="slideshow-body"></div>
+      <div id="modal-slide-sources" class="slide-sources" style="margin-top:12px; font-size: 0.85rem; color: var(--gray-text);"></div>
+    </div>
+    <div id="modal-slide-notes" class="slide-notes" style="width:100%; max-width:900px; margin: 16px auto 0; padding: 12px; background: rgba(74,130,145,0.06); border-radius: 8px; font-size: 0.9rem; border-left: 4px solid var(--teal-deep); color: var(--navy-cta);"></div>
+    
+    <div class="slideshow-controls">
+      <button class="btn btn-ghost" onclick="prevSlide()" style="padding: 10px 20px; font-size: 0.9rem; border: 1px solid var(--teal-soft);">
+        <span data-ar="⬅ السابق" data-en="⬅ Prev">⬅ السابق</span>
+      </button>
+      <span id="slideshow-counter" class="slideshow-counter"></span>
+      <button class="btn btn-ghost" onclick="nextSlide()" style="padding: 10px 20px; font-size: 0.9rem; border: 1px solid var(--teal-soft);">
+        <span data-ar="التالي ➡" data-en="Next ➡">التالي ➡</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span data-ar="مبادرة" data-en="An initiative by">مبادرة</span> <strong>Capsule Tahawul</strong>
+</footer>
+
+<script>
+  const STEPS_AR = ["الفكرة", "الخطة", "المحتوى", "اللابات", "الاختبار", "الجودة", "التصدير"];
+  const STEPS_EN = ["Idea", "Plan", "Content", "Labs", "Quiz", "Quality", "Export"];
+  const CURRENT_STEP = 3; // 1-indexed: Step 3 is Content Generation
+
+  function renderStepProgress(lang) {
+    const labels = lang === 'ar' ? STEPS_AR : STEPS_EN;
+    const container = document.getElementById('step-progress');
+    
+    const hasTitle = !!localStorage.getItem('chosen_title');
+    const hasPlan = !!localStorage.getItem('plan_result');
+
+    const pages = [
+      'step1.html',
+      'step3.html',
+      'step4.html',
+      'step5.html',
+      'step6.html',
+      'step7.html',
+      'step8.html'
+    ];
+
+    container.innerHTML = labels.map((label, i) => {
+      const stepNum = i + 1;
+      const targetPage = pages[i];
+      let cls = 'step-pill';
+      if (stepNum === CURRENT_STEP) cls += ' current';
+      else if (stepNum < CURRENT_STEP) cls += ' done';
+
+      let isClickable = false;
+      let alertMsgAr = '';
+      let alertMsgEn = '';
+
+      if (i === 0) {
+        isClickable = true;
+      } else if (i === 1) {
+        isClickable = hasTitle;
+        alertMsgAr = 'يرجى اختيار عنوان للورشة أولاً.';
+        alertMsgEn = 'Please select a workshop title first.';
+      } else {
+        isClickable = hasPlan;
+        alertMsgAr = 'يرجى إنشاء خطة الورشة أولاً.';
+        alertMsgEn = 'Please generate a workshop plan first.';
+      }
+
+      if (isClickable) {
+        return `<a href="${targetPage}" class="${cls}" style="cursor: pointer; text-decoration: none;">${stepNum}. ${label}</a>`;
+      } else {
+        const alertFunc = `alert(document.documentElement.lang === 'ar' ? '${alertMsgAr}' : '${alertMsgEn}')`;
+        return `<span class="${cls}" onclick="${alertFunc}" style="cursor: not-allowed; opacity: 0.6;">${stepNum}. ${label}</span>`;
+      }
+    }).join('');
+  }
+
+  function setLang(lang) {
+    const isAr = lang === 'ar';
+    document.documentElement.lang = isAr ? 'ar' : 'en';
+    document.documentElement.dir = isAr ? 'rtl' : 'ltr';
+    document.getElementById('btn-ar').classList.toggle('active', isAr);
+    document.getElementById('btn-en').classList.toggle('active', !isAr);
+    document.querySelectorAll('[data-ar]').forEach(el => {
+      el.textContent = isAr ? el.dataset.ar : el.dataset.en;
+    });
+    document.querySelectorAll('[data-ph-ar]').forEach(el => {
+      el.placeholder = isAr ? el.dataset.phAr : el.dataset.phEn;
+    });
+    localStorage.setItem('lang', lang);
+    renderStepProgress(lang);
+    renderChosenTitleLine(isAr);
+
+    if (window._contentLoaded) {
+      const content = isAr ? (window.content_result_ar || MOCK_CONTENT_AR) : (window.content_result || MOCK_CONTENT_EN);
+      renderContent(content);
+    }
+  }
+
+  // Render title line dynamically based on selected language
+  function renderChosenTitleLine(isAr) {
+    const raw = localStorage.getItem('chosen_title');
+    const el = document.getElementById('chosen-title-line');
+    if (!raw) { el.textContent = ''; return; }
+
+    try {
+      const chosen = JSON.parse(raw);
+      let titleText = '';
+      if (typeof chosen === 'object' && chosen !== null) {
+        titleText = isAr ? (chosen.title_ar || chosen.title) : (chosen.title_en || chosen.title);
+      } else {
+        titleText = chosen;
+      }
+      el.textContent = (isAr ? 'الورشة: ' : 'Workshop: ') + titleText;
+    } catch (e) {
+      el.textContent = (isAr ? 'الورشة: ' : 'Workshop: ') + raw;
+    }
+  }
+
+  // ---------- Content generation mock data ----------
+  const MOCK_CONTENT_AR = { slides: [
+    { section: "الترحيب وأهداف الورشة", slide_title: "خارطة الورشة", content_type: "roadmap_slide",
+      blocks: [{ type: "roadmap", items: [
+        { title: "من الدردشة إلى الوكلاء", detail: "٣٠ د — شرح" },
+        { title: "بناء أول مساعد", detail: "٢٠ د — لاب" },
+        { title: "سير العمل الذكي", detail: "٣٠ د — شرح" },
+      ]}],
+      sources: [], speaker_notes: "رحّبي بالحضور واشرحي بنية اليوم بسرعة." },
+    { section: "من الدردشة إلى الوكلاء المستقلين", slide_title: "الدردشة مقابل الوكلاء", content_type: "columns_3_slide",
+      blocks: [
+        { type: "paragraph", text: "ثلاث ركائز تفصل الوكيل الحقيقي عن الدردشة العادية." },
+        { type: "columns_3", columns: [
+          { heading: "الملاحظة", text: "يقرأ حالة البيئة الحالية." },
+          { heading: "التفكير", text: "يقرر الخطوة التالية بناءً على الهدف." },
+          { heading: "الفعل", text: "ينفذ عبر أداة حقيقية، لا نص فقط." },
+        ]},
+      ],
+      sources: [{ title: "AI Agents Explained", url: "https://example.com/agents" }],
+      speaker_notes: "أعطي مثال حي بسيط قبل الانتقال للاب." },
+    { section: "بناء أول مساعد متصل بأدوات", slide_title: "دالة أداة بسيطة", content_type: "content_slide",
+      blocks: [
+        { type: "heading", text: "تعريف الأداة" },
+        { type: "code", text: "def get_weather(city: str) -> str:\n    return fetch(city)" },
+        { type: "bullet_list", items: ["اسم واضح للدالة", "أنواع مدخلات محددة", "وصف مختصر بالتعليق"] },
+      ],
+      sources: [], speaker_notes: "شغّلي المثال حي أمام الحضور." }
+  ]};
+
+  const MOCK_CONTENT_EN = { slides: [
+    { section: "Welcome & Workshop Goals", slide_title: "Workshop Roadmap", content_type: "roadmap_slide",
+      blocks: [{ type: "roadmap", items: [
+        { title: "From Chat to Agents", detail: "30 min — Explain" },
+        { title: "Build Your First Assistant", detail: "20 min — Lab" },
+        { title: "Intelligent Workflows", detail: "30 min — Explain" },
+      ]}],
+      sources: [], speaker_notes: "Welcome the group and outline today's structure." },
+    { section: "From Chat to Autonomous Agents", slide_title: "Chat vs. Agents", content_type: "columns_3_slide",
+      blocks: [
+        { type: "paragraph", text: "Three pillars separate a real agent from plain chat." },
+        { type: "columns_3", columns: [
+          { heading: "Observe", text: "Reads the current environment state." },
+          { heading: "Think", text: "Decides the next step toward the goal." },
+          { heading: "Act", text: "Executes via a real tool, not just text." },
+        ]},
+      ],
+      sources: [{ title: "AI Agents Explained", url: "https://example.com/agents" }],
+      speaker_notes: "Give one live example before moving to the lab." },
+    { section: "Build Your First Tool-Enabled Assistant", slide_title: "A Simple Tool Function", content_type: "content_slide",
+      blocks: [
+        { type: "heading", text: "Defining the Tool" },
+        { type: "code", text: "def get_weather(city: str) -> str:\n    return fetch(city)" },
+        { type: "bullet_list", items: ["Clear function name", "Explicit input types", "Short docstring"] },
+      ],
+      sources: [], speaker_notes: "Run this example live with the group." }
+  ]};
+
+  function renderBlock(block) {
+    switch (block.type) {
+      case 'heading':
+        return `<div class="slide-block block-heading">${block.text}</div>`;
+      case 'paragraph':
+      case 'activity':
+        return `<div class="slide-block">${block.text}</div>`;
+      case 'bullet_list':
+        return `<div class="slide-block block-bullets"><ul>${block.items.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
+      case 'code':
+        return `<div class="slide-block block-code">${block.text}</div>`;
+      case 'image_placeholder':
+        return `<div class="slide-block block-image">[Image: ${block.text}]</div>`;
+      case 'roadmap':
+        return `<div class="slide-block block-bullets"><ul>${block.items.map(i => `<li><strong>${i.title}</strong> — ${i.detail}</li>`).join('')}</ul></div>`;
+      case 'columns_3':
+        return `<div class="slide-block block-bullets"><ul>${block.columns.map(c => `<li><strong>${c.heading}:</strong> ${c.text}</li>`).join('')}</ul></div>`;
+      default:
+        return '';
+    }
+  }
+
+  function groupBySection(slides) {
+    const groups = {};
+    const order = [];
+    slides.forEach(s => {
+      if (!groups[s.section]) { groups[s.section] = []; order.push(s.section); }
+      groups[s.section].push(s);
+    });
+    return order.map(name => ({ section: name, slides: groups[name] }));
+  }
+
+  async function generateContent(isRegenerate) {
+    document.getElementById('content-result').style.display = 'none';
+    document.getElementById('presentation-actions').style.display = 'none';
+    document.getElementById('regen-row').style.display = 'none';
+    document.getElementById('continue-btn').style.display = 'none';
+    document.getElementById('loading-state').style.display = 'flex';
+
+    const rawTitle = localStorage.getItem('chosen_title');
+    const rawPlan = localStorage.getItem('plan_result');
+    if (!rawTitle || !rawPlan) {
+      window.location.href = 'step3.html';
+      return;
+    }
+
+    try {
+      const parsedTitle = JSON.parse(rawTitle);
+      const titleEng = typeof parsedTitle === 'object' ? parsedTitle.title_en : parsedTitle;
+      const plan = JSON.parse(rawPlan);
+      
+      const inputDataStr = localStorage.getItem('workshop_input');
+      const inputData = inputDataStr ? JSON.parse(inputDataStr) : {};
+      
+      const payload = {
+        title: titleEng,
+        learning_objectives: plan.learning_objectives,
+        outline: plan.outline,
+        style: document.getElementById('style-select').value,
+        uploaded_content: inputData.uploaded_content || ""
+      };
+
+      const response = await fetch('/api/generate_content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error('API Content Generation Failed');
+      const data = await response.json();
+      
+      window.content_result = data;
+      
+      // Translate to Arabic
+      try {
+        const trResponse = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: data, context: "Workshop slides content" })
+        });
+        if (trResponse.ok) {
+          window.content_result_ar = await trResponse.json();
+        } else {
+          window.content_result_ar = data;
+        }
+      } catch (trErr) {
+        console.warn('Translation failed:', trErr);
+        window.content_result_ar = data;
+      }
+      
+      const isAr = document.documentElement.lang === 'ar';
+      renderContent(isAr ? window.content_result_ar : window.content_result);
+      window._contentLoaded = true;
+    } catch (err) {
+      console.warn('Using mock fallback content:', err);
+      window.content_result = MOCK_CONTENT_EN;
+      window.content_result_ar = MOCK_CONTENT_AR;
+      const isAr = document.documentElement.lang === 'ar';
+      renderContent(isAr ? MOCK_CONTENT_AR : MOCK_CONTENT_EN);
+      window._contentLoaded = true;
+    } finally {
+      document.getElementById('loading-state').style.display = 'none';
+    }
+  }
+
+  function renderContent(content) {
+    const isAr = document.documentElement.lang === 'ar';
+    const grouped = groupBySection(content.slides);
+    const container = document.getElementById('content-result');
+    container.innerHTML = grouped.map(g => `
+      <div class="slide-section-group">
+        <div class="slide-section-heading">${g.section}</div>
+        ${g.slides.map(s => {
+          const isBreak = s.slide_title === 'Break Time' || s.slide_title === 'استراحة';
+          if (isBreak) {
+            const breakBody = s.blocks.find(b => b.type === 'paragraph');
+            return `
+          <div class="slide-card" style="text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 36px 24px; background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%); border: 2px solid var(--teal-soft);">
+            <div style="font-size: 2rem; font-weight: 800; letter-spacing: 0.04em; color: var(--navy-dark); margin-bottom: 10px;">${s.slide_title.toUpperCase()}</div>
+            ${breakBody ? `<div style="font-size: 1.1rem; font-weight: 600; color: var(--teal-deep);">${breakBody.text}</div>` : ''}
+          </div>`;
+          }
+          return `
+          <div class="slide-card">
+            <div class="slide-card-header">
+              <span class="slide-title-text">${s.slide_title}</span>
+              <span class="slide-type-badge">${s.content_type.replace('_slide', '')}</span>
+            </div>
+            ${s.blocks.map(renderBlock).join('')}
+            ${s.sources && s.sources.length ? `
+              <div class="slide-sources">
+                ${s.sources.map(src => `<a href="${src.url}" target="_blank" rel="noopener">${src.title}</a>`).join(' · ')}
+              </div>` : ''}
+            ${s.speaker_notes ? `<div class="slide-notes">[Notes] ${s.speaker_notes}</div>` : ''}
+
+            <!-- Inline Single Slide Refinement -->
+            <div class="slide-refine-box" style="margin-top: 16px; border-top: 1px dashed var(--teal-soft); padding-top: 12px; display: flex; gap: 8px;">
+              <input type="text" class="refine-slide-input" id="refine-slide-${s.slide_number}" 
+                     placeholder="${isAr ? 'تعديل هذه الشريحة بالذكاء الاصطناعي...' : 'Refine this slide with AI...'}" 
+                     style="flex: 1; padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--teal-soft); border-radius: 4px; background: transparent; color: var(--navy-dark);">
+              <button class="btn btn-ghost" onclick="refineSingleSlide(${s.slide_number})" id="refine-slide-btn-${s.slide_number}" style="padding: 6px 12px; font-size: 0.85rem; min-width: 60px;">
+                <span>${isAr ? 'تعديل' : 'Refine'}</span>
+              </button>
+            </div>
+          </div>
+        `}).join('')}
+      </div>
+    `).join('');
+
+    window._currentContent = content;
+    container.style.display = 'block';
+    document.getElementById('refine-block').style.display = 'block';
+    document.getElementById('presentation-actions').style.display = 'flex';
+    document.getElementById('regen-row').style.display = 'flex';
+    document.getElementById('continue-btn').style.display = 'inline-flex';
+  }
+
+  // ---------- Slideshow & Download Logic ----------
+  let currentSlideIndex = 0;
+  
+  function openSlideshow() {
+    if (!window._currentContent || !window._currentContent.slides || !window._currentContent.slides.length) return;
+    currentSlideIndex = 0;
+    updateSlideshowModal();
+    document.getElementById('slideshow-modal').style.display = 'flex';
+    
+    // Add keyboard listener for navigation
+    document.addEventListener('keydown', handleSlideshowKeydown);
+  }
+  
+  function closeSlideshow() {
+    document.getElementById('slideshow-modal').style.display = 'none';
+    document.removeEventListener('keydown', handleSlideshowKeydown);
+  }
+  
+  function handleSlideshowKeydown(e) {
+    if (e.key === 'ArrowRight') {
+      if (document.documentElement.dir === 'rtl') prevSlide();
+      else nextSlide();
+    } else if (e.key === 'ArrowLeft') {
+      if (document.documentElement.dir === 'rtl') nextSlide();
+      else prevSlide();
+    } else if (e.key === 'Escape') {
+      closeSlideshow();
+    }
+  }
+  
+  function updateSlideshowModal() {
+    const isAr = document.documentElement.lang === 'ar';
+    const slides = window._currentContent.slides;
+    const slide = slides[currentSlideIndex];
+    const isBreak = slide.slide_title === 'Break Time' || slide.slide_title === 'استراحة';
+
+    document.getElementById('modal-slide-title').textContent = slide.slide_title;
+
+    const typeEl = document.getElementById('modal-slide-type');
+    typeEl.textContent = isBreak ? '' : slide.content_type.replace('_slide', '').toUpperCase();
+    typeEl.style.display = isBreak ? 'none' : '';
+
+    const bodyContainer = document.getElementById('modal-slide-body');
+    if (isBreak) {
+      const breakBody = slide.blocks.find(b => b.type === 'paragraph');
+      bodyContainer.innerHTML = `<div style="text-align:center; padding: 20px 0;">
+        <div style="font-size: 2.5rem; font-weight: 800; letter-spacing: 0.04em; color: var(--navy-dark); margin-bottom: 12px;">${slide.slide_title.toUpperCase()}</div>
+        ${breakBody ? `<div style="font-size: 1.2rem; font-weight: 600; color: var(--teal-deep);">${breakBody.text}</div>` : ''}
+      </div>`;
+    } else {
+      bodyContainer.innerHTML = slide.blocks.map(renderBlock).join('');
+    }
+
+    const sourcesContainer = document.getElementById('modal-slide-sources');
+    if (!isBreak && slide.sources && slide.sources.length) {
+      sourcesContainer.innerHTML = (isAr ? 'المصادر: ' : 'Sources: ') + slide.sources.map(src => `<a href="${src.url}" target="_blank" rel="noopener">${src.title}</a>`).join(' · ');
+      sourcesContainer.style.display = 'block';
+    } else {
+      sourcesContainer.style.display = 'none';
+    }
+
+    const notesContainer = document.getElementById('modal-slide-notes');
+    if (!isBreak && slide.speaker_notes) {
+      notesContainer.textContent = `Notes: ${slide.speaker_notes}`;
+      notesContainer.style.display = 'block';
+    } else {
+      notesContainer.style.display = 'none';
+    }
+
+    document.getElementById('slideshow-counter').textContent = `${currentSlideIndex + 1} / ${slides.length}`;
+  }
+  
+  function nextSlide() {
+    if (!window._currentContent) return;
+    const slides = window._currentContent.slides;
+    if (currentSlideIndex < slides.length - 1) {
+      currentSlideIndex++;
+      updateSlideshowModal();
+    }
+  }
+  
+  function prevSlide() {
+    if (currentSlideIndex > 0) {
+      currentSlideIndex--;
+      updateSlideshowModal();
+    }
+  }
+
+  async function downloadPPTX() {
+    const isAr = document.documentElement.lang === 'ar';
+    const rawTitle = localStorage.getItem('chosen_title');
+    if (!rawTitle || !window._currentContent) return;
+    
+    const btn = document.getElementById('download-pptx-btn');
+    const oldText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = isAr ? '⏳ جاري التحميل...' : '⏳ Downloading...';
+    
+    try {
+      const parsedTitle = JSON.parse(rawTitle);
+      const titleEng = typeof parsedTitle === 'object' ? parsedTitle.title_en : parsedTitle;
+      
+      const payload = {
+        title: titleEng,
+        content: window.content_result || window._currentContent,
+        include_images: true
+      };
+      
+      const response = await fetch('/api/export_pptx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) throw new Error('PPTX generation failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${titleEng.replace(/ /g, '_')}.pptx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert(isAr ? 'عذراً، فشل تنزيل الملف من الخادم.' : 'Sorry, failed to download PPTX file from server.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = oldText;
+    }
+  }
+
+  function handleContinue() {
+    if (!window._currentContent) return;
+    localStorage.setItem('content_result', JSON.stringify(window.content_result));
+    localStorage.setItem('content_result_ar', JSON.stringify(window.content_result_ar || window.content_result));
+    window.location.href = 'step5.html';
+  }
+
+  async function refineContent() {
+    const feedback = document.getElementById('refine-feedback').value.trim();
+    if (!feedback) return;
+    
+    const isAr = document.documentElement.lang === 'ar';
+    const refineBtn = document.getElementById('refine-btn');
+    const oldText = refineBtn.innerHTML;
+    
+    refineBtn.disabled = true;
+    refineBtn.innerHTML = isAr ? '⏳ جاري التعديل...' : '⏳ Refining...';
+    
+    try {
+      const payload = {
+        category: "content",
+        current_data: window.content_result || MOCK_CONTENT_EN,
+        feedback: feedback
+      };
+      
+      const response = await fetch('/api/refine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) throw new Error('Refining Failed');
+      const data = await response.json();
+      
+      window.content_result = data;
+      
+      try {
+        const trResponse = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: data, context: "Workshop slides content" })
+        });
+        if (trResponse.ok) {
+          window.content_result_ar = await trResponse.json();
+        } else {
+          window.content_result_ar = data;
+        }
+      } catch (trErr) {
+        console.warn('Translation failed:', trErr);
+        window.content_result_ar = data;
+      }
+      
+      localStorage.setItem('content_result', JSON.stringify(window.content_result));
+      localStorage.setItem('content_result_ar', JSON.stringify(window.content_result_ar));
+      
+      renderContent(isAr ? window.content_result_ar : window.content_result);
+      document.getElementById('refine-feedback').value = '';
+    } catch (err) {
+      console.error(err);
+      alert(isAr ? 'فشل تعديل محتوى الشرائح بالذكاء الاصطناعي.' : 'Failed to refine slide content with AI.');
+    } finally {
+      refineBtn.disabled = false;
+      refineBtn.innerHTML = oldText;
+    }
+  }
+
+  async function refineSingleSlide(slideNum) {
+    const feedback = document.getElementById(`refine-slide-${slideNum}`).value.trim();
+    if (!feedback) return;
+
+    const isAr = document.documentElement.lang === 'ar';
+    const btn = document.getElementById(`refine-slide-btn-${slideNum}`);
+    const input = document.getElementById(`refine-slide-${slideNum}`);
+    const oldText = btn.innerHTML;
+
+    btn.disabled = true;
+    input.disabled = true;
+    btn.innerHTML = isAr ? '⏳...' : '⏳...';
+
+    try {
+      const idx = window.content_result.slides.findIndex(s => s.slide_number === slideNum);
+      if (idx === -1) throw new Error('Slide not found in cache');
+
+      const slideObjEn = window.content_result.slides[idx];
+      const payload = {
+        category: "single_slide",
+        current_data: slideObjEn,
+        feedback: feedback
+      };
+
+      const response = await fetch('/api/refine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error('Slide Refinement Failed');
+      const updatedSlideEn = await response.json();
+
+      updatedSlideEn.slide_number = slideNum;
+      window.content_result.slides[idx] = updatedSlideEn;
+
+      try {
+        const trResponse = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: updatedSlideEn, context: "Workshop slide: " + updatedSlideEn.slide_title })
+        });
+        if (trResponse.ok) {
+          const updatedSlideAr = await trResponse.json();
+          updatedSlideAr.slide_number = slideNum;
+          window.content_result_ar.slides[idx] = updatedSlideAr;
+        } else {
+          window.content_result_ar.slides[idx] = updatedSlideEn;
+        }
+      } catch (trErr) {
+        console.warn('Translation failed:', trErr);
+        window.content_result_ar.slides[idx] = updatedSlideEn;
+      }
+
+      localStorage.setItem('content_result', JSON.stringify(window.content_result));
+      localStorage.setItem('content_result_ar', JSON.stringify(window.content_result_ar));
+
+      renderContent(isAr ? window.content_result_ar : window.content_result);
+    } catch (err) {
+      console.error(err);
+      alert(isAr ? 'فشل تعديل الشريحة بالذكاء الاصطناعي.' : 'Failed to refine slide with AI.');
+    } finally {
+      btn.disabled = false;
+      input.disabled = false;
+      btn.innerHTML = oldText;
+    }
+  }
+
+  // ---------- Init ----------
+  const savedLang = localStorage.getItem('lang');
+  setLang(savedLang || 'ar');
+
+  const planResult = localStorage.getItem('plan_result');
+  if (!planResult) {
+    window.location.href = 'step3.html';
+  } else {
+    const savedContent = localStorage.getItem('content_result');
+    if (savedContent) {
+      window.content_result = JSON.parse(savedContent);
+      const savedContentAr = localStorage.getItem('content_result_ar');
+      window.content_result_ar = savedContentAr ? JSON.parse(savedContentAr) : window.content_result;
+      
+      const isAr = document.documentElement.lang === 'ar';
+      renderContent(isAr ? window.content_result_ar : window.content_result);
+      window._contentLoaded = true;
+      document.getElementById('setup-block').style.display = 'none';
+    }
+  }
+</script>
+<script src="shared/sidebar.js"></script>
+
+</body>
+</html>

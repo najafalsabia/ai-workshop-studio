@@ -1,0 +1,9 @@
+requests
+python-dotenv
+nbformat
+python-docx
+fastapi
+uvicorn
+python-multipart
+openpyxl
+python-pptx

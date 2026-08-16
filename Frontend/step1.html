@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capsule Studio — إعداد الورشة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/styles.css">
+<style>
+  /* Page-specific: idea-mode selector layout only — everything else
+     (form fields, choice cards, buttons, nav row) comes from
+     shared/styles.css. */
+  .idea-fields {
+    margin-top: 22px;
+    padding-top: 6px;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand-slot">
+    <img src="logo_badge.png" alt="Capsule Studio logo">
+  </div>
+  <div class="lang-toggle" role="group" aria-label="Language">
+    <button id="btn-ar" class="active" onclick="setLang('ar')">عربي</button>
+    <button id="btn-en" onclick="setLang('en')">EN</button>
+  </div>
+</header>
+
+<div class="step-progress" id="step-progress"></div>
+
+<main class="page-main">
+  <div class="page-card">
+    <div class="page-eyebrow" data-ar="الخطوة 1" data-en="STEP 1">الخطوة 1</div>
+    <h1 class="page-title" data-ar="عن ورشتك" data-en="About your workshop">عن ورشتك</h1>
+    <p class="page-subtitle" data-ar="عندك فكرة جاهزة، أو تبي تستوحي وحدة؟" data-en="Already have an idea, or want some inspiration?">عندك فكرة جاهزة، أو تبي تستوحي وحدة؟</p>
+
+    <div class="choice-row" role="radiogroup" aria-label="Idea mode">
+      <div class="choice-card selected" id="choice-need" onclick="selectMode('need')" role="radio" aria-checked="true" tabindex="0">
+        <div class="choice-title" data-ar="أحتاج إلهام" data-en="I need inspiration">أحتاج إلهام</div>
+        <div class="choice-desc" data-ar="نبحث لك عن أفكار ورش رائجة حالياً" data-en="We'll search for current, trending workshop ideas">نبحث لك عن أفكار ورش رائجة حالياً</div>
+      </div>
+      <div class="choice-card" id="choice-have" onclick="selectMode('have')" role="radio" aria-checked="false" tabindex="0">
+        <div class="choice-title" data-ar="عندي فكرة بالفعل" data-en="I already have an idea">عندي فكرة بالفعل</div>
+        <div class="choice-desc" data-ar="اكتب فكرتك وننطلق منها مباشرة" data-en="Tell us your idea and we'll build on it directly">اكتب فكرتك وننطلق منها مباشرة</div>
+      </div>
+      <div class="choice-card" id="choice-content" onclick="selectMode('content')" role="radio" aria-checked="false" tabindex="0">
+        <div class="choice-title" data-ar="عندي محتوى بالفعل" data-en="I already have content">عندي محتوى بالفعل</div>
+        <div class="choice-desc" data-ar="حمل ملفاً أو الصق نصاً لنصنع منه ورشتك" data-en="Upload a file or paste text to generate the workshop from it">حمل ملفاً أو الصق نصاً لنصنع منه ورشتك</div>
+      </div>
+    </div>
+
+    <div id="idea-input-field" class="field idea-fields" style="display:none;">
+      <label data-ar="فكرة الورشة" data-en="Workshop idea">فكرة الورشة</label>
+      <input type="text" id="idea_input" placeholder="مثال: ورشة عن هندسة الأوامر للمبتدئين" data-ph-ar="مثال: ورشة عن هندسة الأوامر للمبتدئين" data-ph-en="e.g. A beginner's workshop on prompt engineering">
+    </div>
+
+    <div id="content-upload-field" class="field idea-fields" style="display:none; flex-direction:column; gap:8px;">
+      <label data-ar="محتوى الورشة المرجعي" data-en="Reference Workshop Content">محتوى الورشة المرجعي</label>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div id="dropzone" style="border: 2px dashed var(--teal-soft); border-radius: 12px; padding: 25px; text-align: center; cursor: pointer; background: var(--white); transition: border-color 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.02);" onclick="document.getElementById('file_input').click()">
+          <span id="dropzone-text" style="font-weight: 500; color: var(--teal-deep);" data-ar="اسحب وأفلت ملفاً هنا، أو اضغط للتصفح (.txt, .json, .docx, .pptx)" data-en="Drag & drop a file here, or click to browse (.txt, .json, .docx, .pptx)">اسحب وأفلت ملفاً هنا، أو اضغط للتصفح (.txt, .json, .docx, .pptx)</span>
+          <input type="file" id="file_input" style="display:none;" accept=".txt,.json,.docx,.pptx" onchange="handleFileUpload(event)">
+        </div>
+        <textarea id="content_text" style="width:100%; min-height: 150px; padding: 12px; border: 1px solid var(--teal-soft); border-radius: 8px; background: var(--white); font-family: inherit; font-size: 0.95rem; resize: vertical;" placeholder="أو الصق النص هنا مباشرة..." data-ph-ar="أو الصق النص هنا مباشرة..." data-ph-en="Or paste the text here directly..."></textarea>
+      </div>
+    </div>
+
+    <div id="workshop-fields" class="idea-fields">
+      <div class="field">
+        <label data-ar="مجال الورشة" data-en="Workshop Field / Domain">مجال الورشة</label>
+        <select id="field-select" onchange="toggleCustomField()">
+          <option value="AI & Data Science" data-ar="الذكاء الاصطناعي وعلم البيانات" data-en="AI & Data Science">الذكاء الاصطناعي وعلم البيانات</option>
+          <option value="Cloud Computing" data-ar="الحوسبة السحابية" data-en="Cloud Computing">الحوسبة السحابية</option>
+          <option value="Software Engineering" data-ar="هندسة البرمجيات" data-en="Software Engineering">هندسة البرمجيات</option>
+          <option value="Cybersecurity" data-ar="الأمن السيبراني" data-en="Cybersecurity">الأمن السيبراني</option>
+          <option value="Other" data-ar="أخرى (حدد المجال)" data-en="Other (Specify)">أخرى (حدد المجال)</option>
+        </select>
+      </div>
+
+      <div id="custom-field-block" class="field" style="display:none;">
+        <label data-ar="حدد المجال المخصص" data-en="Specify custom field">حدد المجال المخصص</label>
+        <input type="text" id="custom-field-input" placeholder="مثال: إنترنت الأشياء" data-ph-ar="مثال: إنترنت الأشياء" data-ph-en="e.g. Internet of Things">
+      </div>
+
+      <div class="field">
+        <label data-ar="الجمهور المستهدف" data-en="Target audience">الجمهور المستهدف</label>
+        <input type="text" id="audience" placeholder="مثال: طلاب علوم حاسب بالجامعة" data-ph-ar="مثال: طلاب علوم حاسب بالجامعة" data-ph-en="e.g. University computer science students">
+      </div>
+
+      <div class="field">
+        <label data-ar="الفئة العمرية" data-en="Age group">الفئة العمرية</label>
+        <input type="text" id="age" placeholder="مثال: 18-24" data-ph-ar="مثال: 18-24" data-ph-en="e.g. 18-24">
+      </div>
+
+      <div class="field">
+        <label data-ar="مدة الورشة" data-en="Workshop duration">مدة الورشة</label>
+        <input type="text" id="duration" placeholder="مثال: 3 ساعات" data-ph-ar="مثال: 3 ساعات" data-ph-en="e.g. 3 hours">
+        <span class="hint" data-ar="اكتبها بالساعات، مثل: 3 ساعات أو 4.5 ساعة" data-en="In hours, e.g. '3 hours' or '4.5 hours'">اكتبها بالساعات، مثل: 3 ساعات أو 4.5 ساعة</span>
+      </div>
+
+      <div class="field">
+        <label data-ar="الهدف التعليمي الأساسي" data-en="Primary learning goal">الهدف التعليمي الأساسي</label>
+        <input type="text" id="goal" placeholder="مثال: تعليم الاستخدام العملي لأدوات الذكاء الاصطناعي" data-ph-ar="مثال: تعليم الاستخدام العملي لأدوات الذكاء الاصطناعي" data-ph-en="e.g. Teach practical use of AI coding assistants">
+      </div>
+
+      <div class="field">
+        <label data-ar="ملاحظات إضافية (اختياري)" data-en="Extra notes (optional)">ملاحظات إضافية (اختياري)</label>
+        <textarea id="notes" placeholder="مثال: أبيها تكون عملية أكثر من نظرية" data-ph-ar="مثال: أبيها تكون عملية أكثر من نظرية" data-ph-en="e.g. Should feel hands-on, not just slides"></textarea>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <a href="index.html" class="btn btn-ghost" data-ar="⬅ رجوع" data-en="⬅ Back">⬅ رجوع</a>
+      <button class="btn btn-primary" id="generate-btn" onclick="handleGenerate()">
+        <span data-ar="ولّد اقتراحات العناوين" data-en="Generate title suggestions">ولّد اقتراحات العناوين</span>
+        <span class="arrow">→</span>
+      </button>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span data-ar="مبادرة" data-en="An initiative by">مبادرة</span> <strong>Capsule Tahawul</strong>
+</footer>
+
+<script>
+  const STEPS_AR = ["الفكرة", "الخطة", "المحتوى", "اللابات", "الاختبار", "الجودة", "التصدير"];
+  const STEPS_EN = ["Idea", "Plan", "Content", "Labs", "Quiz", "Quality", "Export"];
+  const CURRENT_STEP = 1; // 1-indexed: this page = step 1 (idea)
+
+  function renderStepProgress(lang) {
+    const labels = lang === 'ar' ? STEPS_AR : STEPS_EN;
+    const container = document.getElementById('step-progress');
+    
+    const hasTitle = !!localStorage.getItem('chosen_title');
+    const hasPlan = !!localStorage.getItem('plan_result');
+
+    const pages = [
+      'step1.html',
+      'step3.html',
+      'step4.html',
+      'step5.html',
+      'step6.html',
+      'step7.html',
+      'step8.html'
+    ];
+
+    container.innerHTML = labels.map((label, i) => {
+      const stepNum = i + 1;
+      const targetPage = pages[i];
+      let cls = 'step-pill';
+      if (stepNum === CURRENT_STEP) cls += ' current';
+      else if (stepNum < CURRENT_STEP) cls += ' done';
+
+      let isClickable = false;
+      let alertMsgAr = '';
+      let alertMsgEn = '';
+
+      if (i === 0) {
+        isClickable = true;
+      } else if (i === 1) {
+        isClickable = hasTitle;
+        alertMsgAr = 'يرجى اختيار عنوان للورشة أولاً.';
+        alertMsgEn = 'Please select a workshop title first.';
+      } else {
+        isClickable = hasPlan;
+        alertMsgAr = 'يرجى إنشاء خطة الورشة أولاً.';
+        alertMsgEn = 'Please generate a workshop plan first.';
+      }
+
+      if (isClickable) {
+        return `<a href="${targetPage}" class="${cls}" style="cursor: pointer; text-decoration: none;">${stepNum}. ${label}</a>`;
+      } else {
+        const alertFunc = `alert(document.documentElement.lang === 'ar' ? '${alertMsgAr}' : '${alertMsgEn}')`;
+        return `<span class="${cls}" onclick="${alertFunc}" style="cursor: not-allowed; opacity: 0.6;">${stepNum}. ${label}</span>`;
+      }
+    }).join('');
+  }
+
+  function setLang(lang) {
+    const isAr = lang === 'ar';
+    document.documentElement.lang = isAr ? 'ar' : 'en';
+    document.documentElement.dir = isAr ? 'rtl' : 'ltr';
+    document.getElementById('btn-ar').classList.toggle('active', isAr);
+    document.getElementById('btn-en').classList.toggle('active', !isAr);
+    document.querySelectorAll('[data-ar]').forEach(el => {
+      el.textContent = isAr ? el.dataset.ar : el.dataset.en;
+    });
+    document.querySelectorAll('[data-ph-ar]').forEach(el => {
+      el.placeholder = isAr ? el.dataset.phAr : el.dataset.phEn;
+    });
+    localStorage.setItem('lang', lang);
+    renderStepProgress(lang);
+  }
+
+  let ideaMode = 'need'; // 'need' = need inspiration, 'have' = already have an idea, 'content' = already have content
+
+  function toggleCustomField() {
+    const isOther = document.getElementById('field-select').value === 'Other';
+    document.getElementById('custom-field-block').style.display = isOther ? 'flex' : 'none';
+  }
+
+  function selectMode(mode) {
+    ideaMode = mode;
+    document.getElementById('choice-need').classList.toggle('selected', mode === 'need');
+    document.getElementById('choice-need').setAttribute('aria-checked', mode === 'need');
+    document.getElementById('choice-have').classList.toggle('selected', mode === 'have');
+    document.getElementById('choice-have').setAttribute('aria-checked', mode === 'have');
+    document.getElementById('choice-content').classList.toggle('selected', mode === 'content');
+    document.getElementById('choice-content').setAttribute('aria-checked', mode === 'content');
+    
+    document.getElementById('idea-input-field').style.display = mode === 'have' ? 'flex' : 'none';
+    document.getElementById('content-upload-field').style.display = mode === 'content' ? 'flex' : 'none';
+    // Hide all workshop fields when user already has content
+    document.getElementById('workshop-fields').style.display = mode === 'content' ? 'none' : 'block';
+    // Update generate button text for content mode
+    const genBtnSpan = document.querySelector('#generate-btn span');
+    if (genBtnSpan) {
+      const isAr = document.documentElement.lang === 'ar';
+      if (mode === 'content') {
+        genBtnSpan.textContent = isAr ? 'توليد الاختبار واللابات' : 'Generate Quiz & Labs';
+      } else {
+        genBtnSpan.textContent = isAr ? 'ولّد اقتراحات العناوين' : 'Generate title suggestions';
+      }
+    }
+  }
+
+  // Allow keyboard selection (Enter/Space) on the choice cards for accessibility
+  ['choice-need', 'choice-have', 'choice-content'].forEach(id => {
+    const card = document.getElementById(id);
+    if (card) {
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectMode(id === 'choice-need' ? 'need' : (id === 'choice-have' ? 'have' : 'content')); }
+      });
+    }
+  });
+
+  async function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const dropzoneText = document.getElementById('dropzone-text');
+    const isAr = document.documentElement.lang === 'ar';
+    dropzoneText.textContent = isAr ? `⏳ جاري معالجة الملف: ${file.name}...` : `⏳ Processing file: ${file.name}...`;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await fetch('/api/parse_file', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to parse file');
+      }
+      
+      const data = await response.json();
+      document.getElementById('content_text').value = data.text;
+      dropzoneText.textContent = isAr ? `تم رفع وقراءة: ${file.name}` : `Successfully loaded: ${file.name}`;
+    } catch (err) {
+      console.error(err);
+      alert(isAr ? 'فشل قراءة الملف. الرجاء التأكد من الصيغة (.txt, .json, .docx, .pptx)' : 'Failed to parse file. Please verify the format (.txt, .json, .docx, .pptx)');
+      dropzoneText.textContent = isAr ? 'اسحب وأفلت ملفاً هنا، أو اضغط للتصفح' : 'Drag & drop a file here, or click to browse';
+    }
+  }
+
+  // Setup Drag and Drop listeners
+  window.addEventListener('DOMContentLoaded', () => {
+    const zone = document.getElementById('dropzone');
+    if (!zone) return;
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+      zone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        zone.style.borderColor = 'var(--teal-deep)';
+        zone.style.background = 'var(--bg-ice)';
+      }, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+      zone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        zone.style.borderColor = 'var(--teal-soft)';
+        zone.style.background = 'var(--white)';
+      }, false);
+    });
+    
+    zone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length) {
+        document.getElementById('file_input').files = files;
+        handleFileUpload({ target: { files: files } });
+      }
+    }, false);
+  });
+
+  function handleGenerate() {
+    // Content-only mode: skip all form fields, go straight to quiz/lab
+    if (ideaMode === 'content') {
+      const uploadedContent = document.getElementById('content_text').value.trim();
+      if (!uploadedContent) {
+        alert(
+          document.documentElement.lang === 'ar'
+            ? 'الرجاء تحميل ملف محتوى أو الصاق نص الورشة المرجعي.'
+            : 'Please upload a file or paste your reference workshop content.'
+        );
+        return;
+      }
+      const workshopInput = {
+        idea_mode: 'content',
+        idea_input: '',
+        field_select: '',
+        custom_field: '',
+        field: '',
+        audience: '',
+        age: '',
+        duration: '',
+        goal: '',
+        notes: '',
+        uploaded_content: uploadedContent
+      };
+      localStorage.setItem('workshop_input', JSON.stringify(workshopInput));
+      // Skip title/plan steps — go directly to labs
+      window.location.href = 'step5.html';
+      return;
+    }
+
+    const selectedFieldVal = document.getElementById('field-select').value;
+    const fieldVal = selectedFieldVal === 'Other' 
+      ? document.getElementById('custom-field-input').value.trim() 
+      : selectedFieldVal;
+
+    const workshopInput = {
+      idea_mode: ideaMode,
+      idea_input: document.getElementById('idea_input').value.trim(),
+      field_select: selectedFieldVal,
+      custom_field: document.getElementById('custom-field-input').value.trim(),
+      field: fieldVal,
+      audience: document.getElementById('audience').value.trim(),
+      age: document.getElementById('age').value.trim(),
+      duration: document.getElementById('duration').value.trim(),
+      goal: document.getElementById('goal').value.trim(),
+      notes: document.getElementById('notes').value.trim(),
+      uploaded_content: ""
+    };
+
+    if (!workshopInput.audience || !workshopInput.age || !workshopInput.duration || !workshopInput.goal) {
+      alert(
+        document.documentElement.lang === 'ar'
+          ? 'عبّ الحقول الأساسية أول (الجمهور، العمر، المدة، الهدف).'
+          : 'Fill in the required fields first (audience, age, duration, goal).'
+      );
+      return;
+    }
+    if (selectedFieldVal === 'Other' && !workshopInput.custom_field) {
+      alert(
+        document.documentElement.lang === 'ar'
+          ? 'يرجى تحديد المجال المخصص.'
+          : 'Please specify the custom field.'
+      );
+      return;
+    }
+    if (ideaMode === 'have' && !workshopInput.idea_input) {
+      alert(
+        document.documentElement.lang === 'ar'
+          ? 'اكتب فكرة الورشة، أو اختر "أحتاج إلهام".'
+          : 'Enter your workshop idea, or choose "I need inspiration".'
+      );
+      return;
+    }
+
+    localStorage.setItem('workshop_input', JSON.stringify(workshopInput));
+
+    // "I already have an idea" mode: the user's own idea IS the title —
+    // asking the AI to suggest 5 alternative titles here would silently
+    // discard what they typed and show unrelated suggestions instead.
+    // Skip step2.html's suggestion screen entirely and use their idea
+    // directly, matching what step2.html would have written to
+    // localStorage on selection (see step2.html's handleContinue()).
+    if (ideaMode === 'have') {
+      // Clear any plan/content/labs/quiz saved from a PREVIOUS workshop —
+      // otherwise step3.html (and later steps) find that old saved data
+      // and display it immediately instead of asking for fresh input,
+      // since normally reaching step3.html with data already saved means
+      // "the user is resuming their own in-progress workshop", not
+      // "the user just started a brand new one".
+      localStorage.removeItem('plan_result');
+      localStorage.removeItem('plan_result_ar');
+      localStorage.removeItem('content_result');
+      localStorage.removeItem('content_result_ar');
+      localStorage.removeItem('labs_result');
+      localStorage.removeItem('labs_result_ar');
+      localStorage.removeItem('quiz_result');
+      localStorage.removeItem('quiz_result_ar');
+      localStorage.removeItem('quiz_approved');
+
+      localStorage.setItem('chosen_title', JSON.stringify({
+        title_ar: workshopInput.idea_input,
+        title_en: workshopInput.idea_input
+      }));
+      window.location.href = 'step3.html';
+      return;
+    }
+
+    window.location.href = 'step2.html';
+  }
+
+  const savedLang = localStorage.getItem('lang');
+  setLang(savedLang || 'ar');
+
+  // Always start with a clean form — no restoring old values
+</script>
+<script src="shared/sidebar.js"></script>
+
+</body>
+</html>

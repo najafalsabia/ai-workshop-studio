@@ -1,0 +1,17 @@
+
+Backend/venv/
+venv/
+__pycache__/
+*.pyc
+.env
+Backend/.env
+generated_labs/
+Frontend/generated_labs/
+*.pptx
+*.docx
+*.xlsx
+!KahootQuizTemplate.xlsx
+!Backend/KahootQuizTemplate.xlsx
+temp_session_state.json
+workshops.db
+.DS_Store

@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capsule Studio — الأنشطة واللابات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand-slot">
+    <img src="logo_badge.png" alt="Capsule Studio logo">
+  </div>
+  <div class="lang-toggle" role="group" aria-label="Language">
+    <button id="btn-ar" class="active" onclick="setLang('ar')">عربي</button>
+    <button id="btn-en" onclick="setLang('en')">EN</button>
+  </div>
+</header>
+
+<div class="step-progress" id="step-progress"></div>
+
+<main class="page-main">
+  <div class="page-card">
+    <div class="page-eyebrow" data-ar="الخطوة 4" data-en="STEP 4">الخطوة 4</div>
+    <h1 class="page-title" data-ar="الأنشطة واللابات التطبيقية" data-en="Hands-on Labs">الأنشطة واللابات التطبيقية</h1>
+    <p class="page-subtitle" id="chosen-title-line"></p>
+
+    <div id="setup-block">
+      <div class="nav-row" style="justify-content: center; margin-top: 4px;">
+        <button class="btn btn-primary" id="generate-btn" onclick="generateLabs(false)">
+          <span data-ar="ولّد اللابات بالكامل" data-en="Generate full labs">ولّد اللابات بالكامل</span>
+          <span class="arrow">→</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="loading-state" class="loading-block" style="display:none;">
+      <div class="spinner" aria-hidden="true"></div>
+      <span data-ar="جاري تحليل المحتوى وتوليد اللابات ودفاتر الملاحظات..." data-en="Analyzing content and generating labs & notebooks...">جاري تحليل المحتوى وتوليد اللابات ودفاتر الملاحظات...</span>
+    </div>
+
+    <div id="labs-result" style="display:none;"></div>
+
+    <!-- AI Refinement block -->
+    <div id="refine-block" style="display:none; margin-top: 24px; border-top: 1.5px solid var(--teal-soft); padding-top: 20px;">
+      <div class="field">
+        <label data-ar="تعديل اللابات بالذكاء الاصطناعي" data-en="Refine Labs with AI">تعديل اللابات بالذكاء الاصطناعي</label>
+        <input type="text" id="refine-feedback" placeholder="مثال: اجعل تحدي البرمجة أصعب قليلاً، أو أضف تلميحات..." data-ph-ar="مثال: اجعل تحدي البرمجة أصعب قليلاً، أو أضف تلميحات..." data-ph-en="E.g., Make the coding task a bit harder, or add hints...">
+      </div>
+      <div class="nav-row" style="justify-content: flex-end; margin-top: 8px; margin-bottom: 12px;">
+        <button class="btn btn-ghost" id="refine-btn" onclick="refineLabs()" style="padding: 10px 20px; font-size: 0.9rem;">
+          <span data-ar="تطبيق التعديل" data-en="Apply Feedback">تطبيق التعديل</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Lab Options (Download) -->
+    <div id="labs-actions" class="nav-row" style="display:none; justify-content:center; gap:12px; margin-top:20px; margin-bottom:12px; flex-wrap:wrap;">
+      <button class="btn btn-primary" id="download-labs-btn" onclick="downloadLabs()" style="background:var(--teal-deep); color:var(--white); font-weight:700;">
+        <span data-ar="تحميل اللابات (.zip)" data-en="Download Labs (.zip)">تحميل اللابات (.zip)</span>
+      </button>
+    </div>
+
+    <div id="regen-row" class="nav-row" style="display:none; justify-content: center; margin-top: 8px; margin-bottom: 8px;">
+      <button class="btn btn-ghost" onclick="generateLabs(true)">
+        <span data-ar="↻ أعد التوليد" data-en="↻ Regenerate">↻ أعد التوليد</span>
+      </button>
+    </div>
+
+    <div class="nav-row">
+      <a href="step4.html" class="btn btn-ghost" data-ar="⬅ رجوع" data-en="⬅ Back">⬅ رجوع</a>
+      <button class="btn btn-primary" id="continue-btn" onclick="handleContinue()" style="display:none;">
+        <span data-ar="متابعة للاختبار" data-en="Continue to quiz">متابعة للاختبار</span>
+        <span class="arrow">→</span>
+      </button>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span data-ar="مبادرة" data-en="An initiative by">مبادرة</span> <strong>Capsule Tahawul</strong>
+</footer>
+
+<script>
+  const STEPS_AR = ["الفكرة", "الخطة", "المحتوى", "اللابات", "الاختبار", "الجودة", "التصدير"];
+  const STEPS_EN = ["Idea", "Plan", "Content", "Labs", "Quiz", "Quality", "Export"];
+  const CURRENT_STEP = 4; // 1-indexed: Step 4 in progression is Labs
+
+  function renderStepProgress(lang) {
+    const labels = lang === 'ar' ? STEPS_AR : STEPS_EN;
+    const container = document.getElementById('step-progress');
+    
+    const hasTitle = !!localStorage.getItem('chosen_title');
+    const hasPlan = !!localStorage.getItem('plan_result');
+
+    const pages = [
+      'step1.html',
+      'step3.html',
+      'step4.html',
+      'step5.html',
+      'step6.html',
+      'step7.html',
+      'step8.html'
+    ];
+
+    container.innerHTML = labels.map((label, i) => {
+      const stepNum = i + 1;
+      const targetPage = pages[i];
+      let cls = 'step-pill';
+      if (stepNum === CURRENT_STEP) cls += ' current';
+      else if (stepNum < CURRENT_STEP) cls += ' done';
+
+      let isClickable = false;
+      let alertMsgAr = '';
+      let alertMsgEn = '';
+
+      if (i === 0) {
+        isClickable = true;
+      } else if (i === 1) {
+        isClickable = hasTitle;
+        alertMsgAr = 'يرجى اختيار عنوان للورشة أولاً.';
+        alertMsgEn = 'Please select a workshop title first.';
+      } else {
+        isClickable = hasPlan;
+        alertMsgAr = 'يرجى إنشاء خطة الورشة أولاً.';
+        alertMsgEn = 'Please generate a workshop plan first.';
+      }
+
+      if (isClickable) {
+        return `<a href="${targetPage}" class="${cls}" style="cursor: pointer; text-decoration: none;">${stepNum}. ${label}</a>`;
+      } else {
+        const alertFunc = `alert(document.documentElement.lang === 'ar' ? '${alertMsgAr}' : '${alertMsgEn}')`;
+        return `<span class="${cls}" onclick="${alertFunc}" style="cursor: not-allowed; opacity: 0.6;">${stepNum}. ${label}</span>`;
+      }
+    }).join('');
+  }
+
+  function setLang(lang) {
+    const isAr = lang === 'ar';
+    document.documentElement.lang = isAr ? 'ar' : 'en';
+    document.documentElement.dir = isAr ? 'rtl' : 'ltr';
+    document.getElementById('btn-ar').classList.toggle('active', isAr);
+    document.getElementById('btn-en').classList.toggle('active', !isAr);
+    document.querySelectorAll('[data-ar]').forEach(el => {
+      el.textContent = isAr ? el.dataset.ar : el.dataset.en;
+    });
+    document.querySelectorAll('[data-ph-ar]').forEach(el => {
+      el.placeholder = isAr ? el.dataset.phAr : el.dataset.phEn;
+    });
+    localStorage.setItem('lang', lang);
+    renderStepProgress(lang);
+    renderChosenTitleLine(isAr);
+
+    if (window._labsLoaded) {
+      const data = isAr ? (window.labs_result_ar || MOCK_LABS_AR) : (window.labs_result || MOCK_LABS_EN);
+      renderLabs(data);
+    }
+  }
+
+  function renderChosenTitleLine(isAr) {
+    const raw = localStorage.getItem('chosen_title');
+    const el = document.getElementById('chosen-title-line');
+    if (!raw) { el.textContent = ''; return; }
+    
+    try {
+      const chosen = JSON.parse(raw);
+      let titleText = '';
+      if (typeof chosen === 'object' && chosen !== null) {
+        if (isAr) {
+          titleText = chosen.title_ar || chosen.title || '';
+        } else {
+          titleText = chosen.title_en || chosen.title || '';
+        }
+      } else {
+        titleText = chosen;
+      }
+      
+      el.textContent = (isAr ? 'الورشة: ' : 'Workshop: ') + titleText;
+    } catch (e) {
+      el.textContent = (isAr ? 'الورشة: ' : 'Workshop: ') + raw;
+    }
+  }
+
+  // ---------- Labs generation ----------
+  const MOCK_LABS_AR = {
+    labs: [
+      {
+        title: "بناء أول مساعد متصل بأدوات",
+        lab_type: "coding",
+        duration_minutes: 20,
+        covers_sections: ["بناء أول مساعد متصل بأدوات"],
+        instructions: "قم بتوصيل دالة الطقس بنموذج الذكاء الاصطناعي واختبر تنفيذ الأوامر بنجاح.",
+        instructor_notes: "تأكد من توزيع مفاتيح API على المتدربين قبل بدء الجلسة.",
+        suggested_platforms: [
+          { name: "Google Colab", url: "https://colab.research.google.com" }
+        ],
+        trainee_notebook_cells: [
+          { cell_type: "markdown", content: "### التمرين الأول: إعداد الدالة" },
+          { cell_type: "code", content: "def get_weather(city: str) -> str:\n    # اكتب كود الربط هنا\n    pass" }
+        ]
+      },
+      {
+        title: "أتمتة مهمة متسلسلة",
+        lab_type: "coding",
+        duration_minutes: 20,
+        covers_sections: ["أتمتة مهمة متسلسلة"],
+        instructions: "قم بربط ثلاث أدوات داخل مسار عمل متكامل يعمل تلقائياً.",
+        instructor_notes: "ساعد المتدربين في تتبع سيناريوهات الأخطاء عند استدعاء الأدوات.",
+        suggested_platforms: [
+          { name: "Jupyter Notebook", url: "https://jupyter.org" }
+        ],
+        trainee_notebook_cells: [
+          { cell_type: "markdown", content: "### التمرين الثاني: بناء المسار المتسلسل" },
+          { cell_type: "code", content: "class AgentPipeline:\n    def run(self, task: str):\n        pass" }
+        ]
+      }
+    ]
+  };
+
+  const MOCK_LABS_EN = {
+    labs: [
+      {
+        title: "Build Your First Tool-Enabled Assistant",
+        lab_type: "coding",
+        duration_minutes: 20,
+        covers_sections: ["Build Your First Tool-Enabled Assistant"],
+        instructions: "Connect a weather tool to an LLM agent and test function execution.",
+        instructor_notes: "Ensure API keys are distributed to trainees prior to the session.",
+        suggested_platforms: [
+          { name: "Google Colab", url: "https://colab.research.google.com" }
+        ],
+        trainee_notebook_cells: [
+          { cell_type: "markdown", content: "### Exercise 1: Define Tool Function" },
+          { cell_type: "code", content: "def get_weather(city: str) -> str:\n    # Write tool code here\n    pass" }
+        ]
+      },
+      {
+        title: "Automate a Sequential Task",
+        lab_type: "coding",
+        duration_minutes: 20,
+        covers_sections: ["Automate a Sequential Task"],
+        instructions: "Chain three distinct tools into an automated execution pipeline.",
+        instructor_notes: "Guide trainees on handling tool failure fallback logic.",
+        suggested_platforms: [
+          { name: "Jupyter Notebook", url: "https://jupyter.org" }
+        ],
+        trainee_notebook_cells: [
+          { cell_type: "markdown", content: "### Exercise 2: Build Pipeline" },
+          { cell_type: "code", content: "class AgentPipeline:\n    def run(self, task: str):\n        pass" }
+        ]
+      }
+    ]
+  };
+
+  function renderCell(cell) {
+    if (cell.cell_type === 'markdown') {
+      return `<div class="slide-block block-heading">${cell.content}</div>`;
+    } else if (cell.cell_type === 'code') {
+      return `<div class="slide-block block-code">${cell.content}</div>`;
+    }
+    return '';
+  }
+
+  async function generateLabs(isRegeneration) {
+    document.getElementById('labs-result').style.display = 'none';
+    document.getElementById('labs-actions').style.display = 'none';
+    document.getElementById('regen-row').style.display = 'none';
+    document.getElementById('continue-btn').style.display = 'none';
+    document.getElementById('loading-state').style.display = 'flex';
+
+    const rawTitle = localStorage.getItem('chosen_title');
+    const rawPlan = localStorage.getItem('plan_result');
+    const workshopInputStr = localStorage.getItem('workshop_input');
+    const workshopInput = workshopInputStr ? JSON.parse(workshopInputStr) : {};
+    const isContentMode = workshopInput.idea_mode === 'content';
+
+    // Content-only mode: needs uploaded_content but not title/plan
+    if (!isContentMode && (!rawTitle || !rawPlan)) {
+      window.location.href = 'step4.html';
+      return;
+    }
+
+    try {
+      // Step 2's slide content, if it exists — grounds the labs in what
+      // was actually taught instead of just the section names.
+      const rawContent = localStorage.getItem('content_result');
+      const contentForApi = rawContent ? JSON.parse(rawContent) : null;
+
+      let payload;
+      if (isContentMode) {
+        // Content-only mode: use uploaded content directly
+        payload = {
+          title: 'Workshop',
+          outline: null,
+          uploaded_content: workshopInput.uploaded_content || '',
+          content: contentForApi
+        };
+      } else {
+        const parsedTitle = JSON.parse(rawTitle);
+        const titleEng = typeof parsedTitle === 'object' ? parsedTitle.title_en : parsedTitle;
+        const plan = JSON.parse(rawPlan);
+        payload = {
+          title: titleEng,
+          outline: plan.outline,
+          uploaded_content: workshopInput.uploaded_content || '',
+          content: contentForApi
+        };
+      }
+
+      const response = await fetch('/api/generate_labs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error('API Labs Generation Failed');
+      const data = await response.json();
+      
+      window.labs_result = data;
+      
+      // Translate to Arabic
+      try {
+        const trResponse = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: data, context: "Workshop hands-on labs and keys" })
+        });
+        if (trResponse.ok) {
+          window.labs_result_ar = await trResponse.json();
+        } else {
+          window.labs_result_ar = data;
+        }
+      } catch (trErr) {
+        console.warn('Translation failed:', trErr);
+        window.labs_result_ar = data;
+      }
+      
+      const isAr = document.documentElement.lang === 'ar';
+      renderLabs(isAr ? window.labs_result_ar : window.labs_result);
+      window._labsLoaded = true;
+    } catch (err) {
+      console.warn('Using mock fallback labs:', err);
+      window.labs_result = MOCK_LABS_EN;
+      window.labs_result_ar = MOCK_LABS_AR;
+      const isAr = document.documentElement.lang === 'ar';
+      renderLabs(isAr ? MOCK_LABS_AR : MOCK_LABS_EN);
+      window._labsLoaded = true;
+    } finally {
+      document.getElementById('loading-state').style.display = 'none';
+    }
+  }
+
+  function renderLabs(data) {
+    const isAr = document.documentElement.lang === 'ar';
+    const container = document.getElementById('labs-result');
+
+    container.innerHTML = data.labs.map((lab, i) => `
+      <div class="slide-card">
+        <div class="slide-card-header">
+          <span class="slide-title-text">${isAr ? 'لاب' : 'Lab'} ${i+1}: ${lab.title}</span>
+          <span class="slide-type-badge">${lab.lab_type.toUpperCase()} | ${lab.duration_minutes} ${isAr ? 'د' : 'min'}</span>
+        </div>
+        
+        <div class="slide-block">${lab.instructions}</div>
+        
+        ${lab.trainee_notebook_cells ? `
+          <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--bg-ice);">
+            <div class="section-label">${isAr ? 'معاينة كود المتدرب' : 'Trainee Code Preview'}</div>
+            ${lab.trainee_notebook_cells.map(renderCell).join('')}
+          </div>
+        ` : ''}
+
+        ${lab.external_tool ? `
+          <div style="margin-top: 12px; padding: 12px; background: var(--bg-ice); border-radius: 8px;">
+            <div class="section-label">${isAr ? 'الموقع التفاعلي' : 'Interactive Tool'}</div>
+            <a href="${lab.external_tool.url}" target="_blank" rel="noopener" style="font-weight:700; font-size:1.05rem;">
+              ${lab.external_tool.name} ↗
+            </a>
+            <div style="margin-top:6px; color: var(--text-muted);">${lab.external_tool.why_it_fits}</div>
+            ${lab.guided_prompts && lab.guided_prompts.length ? `
+              <div style="margin-top:10px;">
+                <div class="section-label">${isAr ? 'أسئلة توجيهية أثناء الاستخدام' : 'Guided prompts while using it'}</div>
+                <ul style="margin: 6px 0 0 20px; padding: 0;">
+                  ${lab.guided_prompts.map(p => `<li>${p}</li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+          </div>
+        ` : ''}
+
+        ${lab.suggested_platforms && lab.suggested_platforms.length ? `
+          <div class="slide-sources">
+            ${isAr ? 'المنصات المقترحة: ' : 'Platforms: '}
+            ${lab.suggested_platforms.map(p => `<a href="${p.url}" target="_blank" rel="noopener">${p.name}</a>`).join(' · ')}
+          </div>
+        ` : ''}
+
+        <div class="slide-notes">${isAr ? 'ملاحظات المدرب: ' : 'Instructor Notes: '} ${lab.instructor_notes}</div>
+      </div>
+    `).join('');
+
+    window._currentLabs = data;
+    container.style.display = 'block';
+    document.getElementById('refine-block').style.display = 'block';
+    document.getElementById('labs-actions').style.display = 'flex';
+    document.getElementById('regen-row').style.display = 'flex';
+    document.getElementById('continue-btn').style.display = 'inline-flex';
+  }
+
+  async function downloadLabs() {
+    const isAr = document.documentElement.lang === 'ar';
+    const rawTitle = localStorage.getItem('chosen_title');
+    if (!rawTitle || !window._currentLabs) return;
+    
+    const btn = document.getElementById('download-labs-btn');
+    const oldText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = isAr ? '⏳ جاري التحميل...' : '⏳ Downloading...';
+    
+    try {
+      const parsedTitle = JSON.parse(rawTitle);
+      const titleEng = typeof parsedTitle === 'object' ? parsedTitle.title_en : parsedTitle;
+      
+      const payload = {
+        title: titleEng,
+        labs: window.labs_result || window._currentLabs
+      };
+      
+      const response = await fetch('/api/export_labs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) throw new Error('Labs export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${titleEng.replace(/ /g, '_')}_labs.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert(isAr ? 'عذراً، فشل تنزيل الملف من الخادم.' : 'Sorry, failed to download labs zip file from server.');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = oldText;
+    }
+  }
+
+  function handleContinue() {
+    if (!window._currentLabs) return;
+    localStorage.setItem('labs_result', JSON.stringify(window.labs_result));
+    localStorage.setItem('labs_result_ar', JSON.stringify(window.labs_result_ar || window.labs_result));
+    window.location.href = 'step6.html';
+  }
+
+  async function refineLabs() {
+    const feedback = document.getElementById('refine-feedback').value.trim();
+    if (!feedback) return;
+    
+    const isAr = document.documentElement.lang === 'ar';
+    const refineBtn = document.getElementById('refine-btn');
+    const oldText = refineBtn.innerHTML;
+    
+    refineBtn.disabled = true;
+    refineBtn.innerHTML = isAr ? '⏳ جاري التعديل...' : '⏳ Refining...';
+    
+    try {
+      const payload = {
+        category: "labs",
+        current_data: window.labs_result || MOCK_LABS_EN,
+        feedback: feedback
+      };
+      
+      const response = await fetch('/api/refine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) throw new Error('Refining Failed');
+      const data = await response.json();
+      
+      window.labs_result = data;
+      
+      try {
+        const trResponse = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: data, context: "Workshop hands-on labs and keys" })
+        });
+        if (trResponse.ok) {
+          window.labs_result_ar = await trResponse.json();
+        } else {
+          window.labs_result_ar = data;
+        }
+      } catch (trErr) {
+        console.warn('Translation failed:', trErr);
+        window.labs_result_ar = data;
+      }
+      
+      localStorage.setItem('labs_result', JSON.stringify(window.labs_result));
+      localStorage.setItem('labs_result_ar', JSON.stringify(window.labs_result_ar));
+      
+      renderLabs(isAr ? window.labs_result_ar : window.labs_result);
+      document.getElementById('refine-feedback').value = '';
+    } catch (err) {
+      console.error(err);
+      alert(isAr ? 'فشل تعديل اللابات بالذكاء الاصطناعي.' : 'Failed to refine labs with AI.');
+    } finally {
+      refineBtn.disabled = false;
+      refineBtn.innerHTML = oldText;
+    }
+  }
+
+  // ---------- Init ----------
+  const savedLang = localStorage.getItem('lang');
+  setLang(savedLang || 'ar');
+
+  const planResult = localStorage.getItem('plan_result');
+  const workshopInputRaw = localStorage.getItem('workshop_input');
+  const workshopInputInit = workshopInputRaw ? JSON.parse(workshopInputRaw) : {};
+  const isContentModeInit = workshopInputInit.idea_mode === 'content';
+
+  // Allow access in content-only mode (no plan needed) OR when plan exists
+  if (!planResult && !isContentModeInit) {
+    window.location.href = 'step3.html';
+  } else {
+    const savedLabs = localStorage.getItem('labs_result');
+    if (savedLabs) {
+      window.labs_result = JSON.parse(savedLabs);
+      const savedLabsAr = localStorage.getItem('labs_result_ar');
+      window.labs_result_ar = savedLabsAr ? JSON.parse(savedLabsAr) : window.labs_result;
+      
+      const isAr = document.documentElement.lang === 'ar';
+      renderLabs(isAr ? window.labs_result_ar : window.labs_result);
+      window._labsLoaded = true;
+      document.getElementById('setup-block').style.display = 'none';
+    }
+  }
+</script>
+<script src="shared/sidebar.js"></script>
+
+</body>
+</html>

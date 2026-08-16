@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capsule Studio — اختيار العنوان</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600" rel="stylesheet">
+<link rel="stylesheet" href="shared/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand-slot">
+    <img src="logo_badge.png" alt="Capsule Studio logo">
+  </div>
+  <div class="lang-toggle" role="group" aria-label="Language">
+    <button id="btn-ar" class="active" onclick="setLang('ar')">عربي</button>
+    <button id="btn-en" onclick="setLang('en')">EN</button>
+  </div>
+</header>
+
+<div class="step-progress" id="step-progress"></div>
+
+<main class="page-main">
+  <div class="page-card">
+    <div class="page-eyebrow" data-ar="الخطوة 1 — تكملة" data-en="STEP 1 — continued">الخطوة 1 — تكملة</div>
+    <h1 class="page-title" data-ar="اختر عنوان الورشة" data-en="Pick a workshop title">اختر عنوان الورشة</h1>
+    <p class="page-subtitle" data-ar="هذي اقتراحات مبنية على بحث حديث حول موضوعك. اختر وحدة، أو ولّد غيرها." data-en="These suggestions are grounded in recent research on your topic. Pick one, or generate new ones.">هذي اقتراحات مبنية على بحث حديث حول موضوعك. اختر وحدة، أو ولّد غيرها.</p>
+
+    <div id="loading-state" class="loading-block" style="display:none;">
+      <div class="spinner" aria-hidden="true"></div>
+      <span data-ar="جاري البحث وتوليد اقتراحات..." data-en="Searching and generating suggestions...">جاري البحث وتوليد اقتراحات...</span>
+    </div>
+
+    <div id="titles-list"></div>
+
+    <div class="nav-row" style="justify-content: center; margin-top: 8px; margin-bottom: 28px;">
+      <button class="btn btn-ghost" id="regen-btn" onclick="loadTitles(true)">
+        <span data-ar="↻ ولّد عناوين جديدة" data-en="↻ Generate new titles">↻ ولّد عناوين جديدة</span>
+      </button>
+    </div>
+
+    <!-- AI Refinement block -->
+    <div id="refine-block" style="margin-top: 24px; border-top: 1.5px solid var(--teal-soft); padding-top: 20px;">
+      <div class="field">
+        <label data-ar="تعديل العناوين بالذكاء الاصطناعي" data-en="Refine Titles with AI">تعديل العناوين بالذكاء الاصطناعي</label>
+        <input type="text" id="refine-feedback" placeholder="مثال: اجعلها أكثر عملية، أو ركز على المطورين..." data-ph-ar="مثال: اجعلها أكثر عملية، أو ركز على المطورين..." data-ph-en="E.g., Make them more practical, or focus on developers...">
+      </div>
+      <div class="nav-row" style="justify-content: flex-end; margin-top: 8px; margin-bottom: 12px;">
+        <button class="btn btn-ghost" id="refine-btn" onclick="refineTitles()" style="padding: 10px 20px; font-size: 0.9rem;">
+          <span data-ar="تطبيق التعديل" data-en="Apply Feedback">تطبيق التعديل</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <a href="step1.html" class="btn btn-ghost" data-ar="⬅ رجوع" data-en="⬅ Back">⬅ رجوع</a>
+      <button class="btn btn-primary" id="continue-btn" onclick="handleContinue()" disabled>
+        <span data-ar="متابعة بهذا العنوان" data-en="Continue with this title">متابعة بهذا العنوان</span>
+        <span class="arrow">→</span>
+      </button>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span data-ar="مبادرة" data-en="An initiative by">مبادرة</span> <strong>Capsule Tahawul</strong>
+</footer>
+
+<script>
+  const STEPS_AR = ["الفكرة", "الخطة", "المحتوى", "اللابات", "الاختبار", "الجودة", "التصدير"];
+  const STEPS_EN = ["Idea", "Plan", "Content", "Labs", "Quiz", "Quality", "Export"];
+  const CURRENT_STEP = 1; // Title selection is part of the "Idea" stage
+
+  // Render horizontal progress bar steps
+  function renderStepProgress(lang) {
+    const labels = lang === 'ar' ? STEPS_AR : STEPS_EN;
+    const container = document.getElementById('step-progress');
+    
+    const hasTitle = !!localStorage.getItem('chosen_title');
+    const hasPlan = !!localStorage.getItem('plan_result');
+
+    const pages = [
+      'step1.html',
+      'step3.html',
+      'step4.html',
+      'step5.html',
+      'step6.html',
+      'step7.html',
+      'step8.html'
+    ];
+
+    container.innerHTML = labels.map((label, i) => {
+      const stepNum = i + 1;
+      const targetPage = pages[i];
+      let cls = 'step-pill';
+      if (stepNum === CURRENT_STEP) cls += ' current';
+      else if (stepNum < CURRENT_STEP) cls += ' done';
+
+      let isClickable = false;
+      let alertMsgAr = '';
+      let alertMsgEn = '';
+
+      if (i === 0) {
+        isClickable = true;
+      } else if (i === 1) {
+        isClickable = hasTitle;
+        alertMsgAr = 'يرجى اختيار عنوان للورشة أولاً.';
+        alertMsgEn = 'Please select a workshop title first.';
+      } else {
+        isClickable = hasPlan;
+        alertMsgAr = 'يرجى إنشاء خطة الورشة أولاً.';
+        alertMsgEn = 'Please generate a workshop plan first.';
+      }
+
+      if (isClickable) {
+        return `<a href="${targetPage}" class="${cls}" style="cursor: pointer; text-decoration: none;">${stepNum}. ${label}</a>`;
+      } else {
+        const alertFunc = `alert(document.documentElement.lang === 'ar' ? '${alertMsgAr}' : '${alertMsgEn}')`;
+        return `<span class="${cls}" onclick="${alertFunc}" style="cursor: not-allowed; opacity: 0.6;">${stepNum}. ${label}</span>`;
+      }
+    }).join('');
+  }
+
+  // Handle global language toggle (Arabic/English)
+  function setLang(lang) {
+    const isAr = lang === 'ar';
+    document.documentElement.lang = isAr ? 'ar' : 'en';
+    document.documentElement.dir = isAr ? 'rtl' : 'ltr';
+    document.getElementById('btn-ar').classList.toggle('active', isAr);
+    document.getElementById('btn-en').classList.toggle('active', !isAr);
+    document.querySelectorAll('[data-ar]').forEach(el => {
+      el.textContent = isAr ? el.dataset.ar : el.dataset.en;
+    });
+    document.querySelectorAll('[data-ph-ar]').forEach(el => {
+      el.placeholder = isAr ? el.dataset.phAr : el.dataset.phEn;
+    });
+    localStorage.setItem('lang', lang);
+    renderStepProgress(lang);
+
+    // Re-render titles upon language toggle while retaining selection state
+    if (window._titlesLoaded) {
+      const selectedIndex = window._selectedIndex;
+      renderTitles(isAr ? (window.titles_result_ar || MOCK_TITLES_AR) : (window.titles_result || MOCK_TITLES_EN));
+      if (selectedIndex !== null && selectedIndex !== undefined) {
+        selectTitle(selectedIndex);
+      }
+    }
+  }
+
+  // ---------- Title suggestions mock data ----------
+  const MOCK_TITLES_AR = [
+    { title: "ما وراء الأتمتة: بناء وكلاء ذكاء اصطناعي موثوقين", why: "مبني على نقاش تقني حديث حول الفرق بين الأتمتة البسيطة والوكلاء الحقيقيين." },
+    { title: "من الفكرة إلى الإنتاج: هندسة الأوامر كتخصص", why: "يعكس اتجاه حديث بمعاملة هندسة الأوامر كممارسة هندسية رسمية، لا تجربة عشوائية." },
+    { title: "تصحيح الأخطاء بمساعدة الذكاء الاصطناعي: ما بعد الإكمال التلقائي", why: "مستند إلى مقالات حديثة تناقش استخدام الوكلاء لتحليل الأخطاء لا فقط اقتراح الكود." },
+    { title: "الوكلاء الآمنون: حواجز الحماية والتحقق البشري", why: "يتماشى مع نقاش متزايد حول أهمية الإشراف البشري بأنظمة الذكاء الاصطناعي المستقلة." },
+    { title: "سياقات أكبر، قرارات أذكى: هندسة السياق للوكلاء", why: "مبني على تغطية حديثة لتقنيات إدارة السياق بنماذج اللغة الكبيرة." },
+  ];
+
+  const MOCK_TITLES_EN = [
+    { title: "Beyond Automation: Building Trustworthy AI Agents", why: "Grounded in recent technical discussion on the gap between simple automation and true agents." },
+    { title: "From Idea to Production: Prompt Engineering as a Discipline", why: "Reflects a current trend treating prompt engineering as formal engineering practice, not guesswork." },
+    { title: "AI-Assisted Debugging: Beyond Autocomplete", why: "Based on recent articles on using agents to analyze failures, not just suggest code." },
+    { title: "Safe Agents: Guardrails and Human Verification", why: "Aligns with growing discussion on the importance of human oversight in autonomous AI systems." },
+    { title: "Bigger Context, Smarter Decisions: Context Engineering for Agents", why: "Grounded in recent coverage of context-management techniques for large language models." },
+  ];
+
+  let selectedTitle = null;
+
+  // Load title options from the real backend API
+  async function loadTitles(isRegenerate) {
+    document.getElementById('titles-list').innerHTML = '';
+    document.getElementById('loading-state').style.display = 'flex';
+    document.getElementById('continue-btn').disabled = true;
+    selectedTitle = null;
+
+    const inputDataStr = localStorage.getItem('workshop_input');
+    if (!inputDataStr) {
+      window.location.href = 'step1.html';
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/generate_titles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: inputDataStr
+      });
+      if (!response.ok) throw new Error('API Title Generation Failed');
+      const data = await response.json();
+      
+      // Real English titles
+      window.titles_result = data.titles;
+      
+      // Translate to Arabic
+      try {
+        const trResponse = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: data, context: "Workshop titles list" })
+        });
+        if (trResponse.ok) {
+          const trData = await trResponse.json();
+          window.titles_result_ar = trData.titles;
+        } else {
+          window.titles_result_ar = data.titles;
+        }
+      } catch (trErr) {
+        console.warn('Translation failed:', trErr);
+        window.titles_result_ar = data.titles;
+      }
+      
+      const isAr = document.documentElement.lang === 'ar';
+      renderTitles(isAr ? window.titles_result_ar : window.titles_result);
+      window._titlesLoaded = true;
+    } catch (err) {
+      console.warn('Using mock fallback titles:', err);
+      window.titles_result = MOCK_TITLES_EN;
+      window.titles_result_ar = MOCK_TITLES_AR;
+      const isAr = document.documentElement.lang === 'ar';
+      renderTitles(isAr ? MOCK_TITLES_AR : MOCK_TITLES_EN);
+      window._titlesLoaded = true;
+    } finally {
+      document.getElementById('loading-state').style.display = 'none';
+    }
+  }
+
+  // Render title cards in DOM
+  function renderTitles(titles) {
+    const list = document.getElementById('titles-list');
+    list.innerHTML = titles.map((t, i) => `
+      <div class="option-card" id="title-${i}" onclick="selectTitle(${i})" role="radio" aria-checked="false" tabindex="0">
+        <div class="option-title">${t.title}</div>
+        <div class="option-desc">${t.why}</div>
+      </div>
+    `).join('');
+
+    titles.forEach((t, i) => {
+      const card = document.getElementById(`title-${i}`);
+      if (card) {
+        card.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectTitle(i); }
+        });
+      }
+    });
+
+    window._currentTitles = titles;
+  }
+
+  // Handle title card selection (saves both Arabic and English titles together)
+  function selectTitle(i) {
+    document.querySelectorAll('.option-card').forEach(el => {
+      el.classList.remove('selected');
+      el.setAttribute('aria-checked', 'false');
+    });
+    const card = document.getElementById(`title-${i}`);
+    if (card) {
+      card.classList.add('selected');
+      card.setAttribute('aria-checked', 'true');
+    }
+    
+    const engList = window.titles_result || MOCK_TITLES_EN;
+    const arList = window.titles_result_ar || MOCK_TITLES_AR;
+    
+    selectedTitle = {
+      title_ar: arList[i] ? arList[i].title : engList[i].title,
+      title_en: engList[i].title
+    };
+
+    window._selectedIndex = i;
+    document.getElementById('continue-btn').disabled = false;
+  }
+
+  // Save selected title object to localStorage and navigate to plan builder
+  function handleContinue() {
+    if (!selectedTitle) return;
+    // Clear any plan/content/labs/quiz saved from a PREVIOUS workshop —
+    // same reasoning as step1.html's "I already have an idea" path: a
+    // freshly chosen title means a brand new workshop, not a resume of
+    // whatever was last saved to localStorage.
+    localStorage.removeItem('plan_result');
+    localStorage.removeItem('plan_result_ar');
+    localStorage.removeItem('content_result');
+    localStorage.removeItem('content_result_ar');
+    localStorage.removeItem('labs_result');
+    localStorage.removeItem('labs_result_ar');
+    localStorage.removeItem('quiz_result');
+    localStorage.removeItem('quiz_result_ar');
+    localStorage.removeItem('quiz_approved');
+
+    localStorage.setItem('chosen_title', JSON.stringify(selectedTitle));
+    window.location.href = 'step3.html';
+  }
+
+  async function refineTitles() {
+    const feedback = document.getElementById('refine-feedback').value.trim();
+    if (!feedback) return;
+    
+    const isAr = document.documentElement.lang === 'ar';
+    const refineBtn = document.getElementById('refine-btn');
+    const oldText = refineBtn.innerHTML;
+    
+    refineBtn.disabled = true;
+    refineBtn.innerHTML = isAr ? '⏳ جاري التعديل...' : '⏳ Refining...';
+    
+    try {
+      const payload = {
+        category: "titles",
+        current_data: { titles: window.titles_result || MOCK_TITLES_EN },
+        feedback: feedback
+      };
+      
+      const response = await fetch('/api/refine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) throw new Error('Refining Failed');
+      const data = await response.json();
+      
+      window.titles_result = data.titles;
+      
+      try {
+        const trResponse = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: data, context: "Workshop titles list" })
+        });
+        if (trResponse.ok) {
+          const trData = await trResponse.json();
+          window.titles_result_ar = trData.titles;
+        } else {
+          window.titles_result_ar = data.titles;
+        }
+      } catch (trErr) {
+        console.warn('Translation failed:', trErr);
+        window.titles_result_ar = data.titles;
+      }
+      
+      renderTitles(isAr ? window.titles_result_ar : window.titles_result);
+      document.getElementById('refine-feedback').value = '';
+    } catch (err) {
+      console.error(err);
+      alert(isAr ? 'فشل تعديل العناوين بالذكاء الاصطناعي.' : 'Failed to refine titles with AI.');
+    } finally {
+      refineBtn.disabled = false;
+      refineBtn.innerHTML = oldText;
+    }
+  }
+
+  // ---------- Init ----------
+  const savedLang = localStorage.getItem('lang');
+  setLang(savedLang || 'ar');
+
+  // Guard clause: redirect back if step 1 input data is missing
+  const workshopInput = localStorage.getItem('workshop_input');
+  if (!workshopInput) {
+    window.location.href = 'step1.html';
+  } else {
+    loadTitles(false);
+  }
+</script>
+<script src="shared/sidebar.js"></script>
+
+</body>
+</html>
